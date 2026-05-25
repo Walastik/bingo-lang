@@ -1,91 +1,133 @@
 import React from 'react';
-import { View, StyleSheet, FlatList, Text } from 'react-native';
-import BingoCell from './BingoCell';
-import { BingoCard } from '../utils/bingoUtils';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
+
+interface BingoCard {
+  grid: (number | 'FREE')[];
+}
 
 interface BingoCardViewProps {
   card: BingoCard;
-  onCellPress?: (index: number) => void;
+  cardIndex: number;
+  userDaubs: Set<string>;
+  onCellPress: (flatIndex: number) => void;
 }
 
-const BingoCardView: React.FC<BingoCardViewProps> = ({ card, onCellPress }) => {
-  const renderGrid = () => {
-    // Render header row
-    const headerRow = (
-      <View style={styles.headerRow}>
-        {['B', 'I', 'N', 'G', 'O'].map((letter) => (
-          <Text key={letter} style={styles.headerText}>
-            {letter}
-          </Text>
+const BingoCardView: React.FC<BingoCardViewProps> = ({ 
+  card, 
+  cardIndex, 
+  userDaubs, 
+  onCellPress 
+}) => {
+  return (
+    <View style={styles.card}>
+      {/* Header */}
+      <View style={styles.header}>
+        {['B', 'I', 'N', 'G', 'O'].map((letter, col) => (
+          <View key={col} style={styles.headerCell}>
+            <Text style={styles.headerText}>{letter}</Text>
+          </View>
         ))}
       </View>
-    );
 
-    // Render 5 rows of cells
-    const rows = [];
-    for (let row = 0; row < 5; row++) {
-      const rowData = [];
-      for (let col = 0; col < 5; col++) {
-        const flatIndex = row * 5 + col;
-        const value = card.grid[flatIndex];
-        const isDaubed = card.daubed[flatIndex];
-        
-        rowData.push(
-          <BingoCell
-            key={`${row}-${col}`}
-            value={value}
-            isDaubed={isDaubed}
-            onPress={() => onCellPress?.(flatIndex)}
-          />
-        );
-      }
-      rows.push(
-        <View key={row} style={styles.row}>
-          {rowData}
-        </View>
-      );
-    }
+      {/* Grid */}
+      <View style={styles.grid}>
+        {card.grid.map((cell, flatIndex) => {
+          const row = Math.floor(flatIndex / 5);
+          const col = flatIndex % 5;
+          const isFree = cell === 'FREE';
+          const isDaubed = userDaubs.has(`${cardIndex}-${row}-${col}`);
 
-    return (
-      <>
-        {headerRow}
-        {rows}
-      </>
-    );
-  };
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>BINGO CARD</Text>
-      {renderGrid()}
+          return (
+            <TouchableOpacity
+              key={flatIndex}
+              style={[
+                styles.cell,
+                isDaubed && styles.cellDaubed,
+              ]}
+              onPress={() => !isFree && onCellPress(flatIndex)}
+              activeOpacity={0.7}
+              disabled={isFree}
+            >
+              <Text style={[
+                styles.cellText,
+                isDaubed && styles.cellTextDaubed
+              ]}>
+                {isFree ? '★' : cell}
+              </Text>
+              {isDaubed && !isFree && (
+                <View style={styles.daubMarker} />
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    padding: 16,
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#333',
-  },
-  headerRow: {
+  header: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: 10,
+  },
+  headerCell: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerText: {
-    width: 60,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#007AFF',
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  cell: {
+    width: '19%',
+    aspectRatio: 1,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 2,
+    position: 'relative',
+  },
+  cellDaubed: {
+    backgroundColor: '#e6f2ff',
+  },
+  cellText: {
     fontSize: 16,
     fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#666',
+    color: '#333',
   },
-  row: {
-    flexDirection: 'row',
+  cellTextDaubed: {
+    color: '#007AFF',
+  },
+  daubMarker: {
+    position: 'absolute',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(0, 122, 255, 0.3)',
+    zIndex: 1,
   },
 });
 

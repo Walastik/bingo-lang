@@ -78,6 +78,8 @@ export default function App() {
           <View key={`card-${index}`} style={styles.cardWrapper}>
             <BingoCardView 
               card={card}
+              cardIndex={index}
+              userDaubs={userDaubs}
               onCellPress={(flatIndex) => {
                 const row = Math.floor(flatIndex / 5);
                 const col = flatIndex % 5;
