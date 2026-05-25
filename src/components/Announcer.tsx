@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { getBallString } from '../utils/bingoUtils';
 
@@ -8,6 +8,11 @@ interface AnnouncerProps {
 }
 
 const Announcer = ({ currentBall, recentBalls }: AnnouncerProps) => {
+  // Filter out the current ball so it doesn't show in the recent list simultaneously
+  const previousBalls = recentBalls.filter(ball => ball !== currentBall);
+  
+  // Grab the last 3 balls from the array, reversed so the newest is on the left
+  const displayBalls = previousBalls.slice(-3).reverse();
   return (
     <View style={styles.container}>
       <Text style={styles.title}>CURRENT BALL</Text>
@@ -17,11 +22,11 @@ const Announcer = ({ currentBall, recentBalls }: AnnouncerProps) => {
         </Text>
       </View>
       
-      {recentBalls.length > 0 && (
+      {displayBalls.length > 0 && (
         <View style={styles.recentBallsContainer}>
           <Text style={styles.recentTitle}>Recent Balls</Text>
           <View style={styles.recentBallsRow}>
-            {recentBalls.slice(-3).map((ball, index) => (
+            {displayBalls.slice(-3).map((ball, index) => (
               <Text key={index} style={styles.recentBallText}>
                 {ball}
               </Text>
