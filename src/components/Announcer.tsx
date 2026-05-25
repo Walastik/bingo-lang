@@ -21,7 +21,7 @@ const Announcer = ({ currentBall, recentBalls }: AnnouncerProps) => {
         <View style={styles.recentBallsContainer}>
           <Text style={styles.recentTitle}>Recent Balls</Text>
           <View style={styles.recentBallsRow}>
-            {recentBalls.slice(0, 3).map((ball, index) => (
+            {recentBalls.slice(-3).map((ball, index) => (
               <Text key={index} style={styles.recentBallText}>
                 {ball}
               </Text>
