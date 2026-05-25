@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Import the files we actually built!
 import useBingoGame from './src/hooks/useBingoGame';
 import BingoCardView from './src/components/BingoCardView';
 import Announcer from './src/components/Announcer';
@@ -17,10 +16,9 @@ import Announcer from './src/components/Announcer';
 export default function App() {
   const [selectedCardCount, setSelectedCardCount] = useState<number>(1);
   
-  // Bring in our custom hook instead of Qwen's mocks
   const {
     gameState,
-    userCards, // Assuming your hook returns the array of generated user cards
+    userCards,
     currentBall,
     drawnBalls,
     userDaubs,
@@ -35,7 +33,7 @@ export default function App() {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" />
         <View style={styles.lobbyContent}>
-          <Text style={styles.title}>Bingo Master</Text>
+          <Text style={styles.title}>Bingo Lang!</Text>
           <Text style={styles.subtitle}>Select your cards</Text>
 
           <View style={styles.selectionContainer}>
