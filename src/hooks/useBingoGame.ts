@@ -83,7 +83,7 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
         }
         setGameState('lobby');
       }
-    }, 3000);
+    }, 6500);
   }, [gameState, drawNextBall]);
 
   const daubSpace = useCallback((cardIndex: number, row: number, col: number) => {
