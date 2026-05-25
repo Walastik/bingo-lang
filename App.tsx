@@ -25,6 +25,7 @@ export default function App() {
     startGame,
     daubSpace,
     callBingo,
+    resetGame,
   } = useBingoGame({ userCardCount: selectedCardCount });
 
   // --- RENDER: LOBBY ---
@@ -110,8 +111,7 @@ export default function App() {
                 ? 'Great job calling bingo!' 
                 : 'Better luck next time!'}
             </Text>
-            {/* Note: You may need to add a resetGame function to your hook to hook this up fully */}
-            <TouchableOpacity style={styles.playAgainButton} onPress={() => console.log('Reset game clicked')}>
+            <TouchableOpacity style={styles.playAgainButton} onPress={resetGame}>
               <Text style={styles.playAgainButtonText}>Play Again</Text>
             </TouchableOpacity>
           </View>

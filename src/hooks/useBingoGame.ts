@@ -127,6 +127,41 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     };
   }, []);
 
+  const resetGame = useCallback(() => {
+    // Clear any running timers just in case
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    const newNPCCards: BingoCard[] = [];
+    for (let i = 0; i < 10; i++) {
+      newNPCCards.push(generateCard());
+    }
+    setNpcCards(newNPCCards);
+    
+    const newUserCards: BingoCard[] = [];
+    for (let i = 0; i < userCardCount; i++) {
+      newUserCards.push(generateCard());
+    }
+    setUserCards(newUserCards);
+    
+    deckRef.current = generateDeck();
+    drawnBallsSetRef.current = new Set();
+    setDrawnBalls([]);
+    setCurrentBall(null);
+    setUserDaubs(new Set());
+    setGameState('lobby');
+  }, [userCardCount]);
+
+  useEffect(() => {
+    resetGame();
+  }, [resetGame]);
+
+  useEffect(() => {
+    npcCardsRef.current = npcCards;
+  }, [npcCards]);
+
   return {
     userCards,
     npcCards,
@@ -136,7 +171,8 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     gameState,
     startGame,
     daubSpace,
-    callBingo
+    callBingo,
+    resetGame
   };
 };
 
