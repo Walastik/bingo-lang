@@ -98,6 +98,29 @@ export const getBallString = (num: number | null): string => {
 };
 
 /**
+ * Helper function mapping a ball number to a color
+ * @param number The ball number (9)
+ * @returns A string which is a hex color like #FF3B30
+ */
+export function getBallColor(number: number): string {
+  if (number < 1 || number > 75) {
+    return '#8E8E93'; // fallback color for invalid numbers
+  }
+
+  if (number <= 15) {
+    return '#FF3B30'; // B
+  } else if (number <= 30) {
+    return '#007AFF'; // I
+  } else if (number <= 45) {
+    return '#34C759'; // N
+  } else if (number <= 60) {
+    return '#FF9500'; // G
+  } else {
+    return '#AF52DE'; // O
+  }
+}
+
+/**
  * Check if a Bingo card has won based on drawn balls or user daubed spaces
  * @param card The Bingo card to check
  * @param drawnBalls Set of numbers drawn (for NPCs)

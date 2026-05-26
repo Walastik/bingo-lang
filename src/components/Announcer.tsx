@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { getBallString } from '../utils/bingoUtils';
+import BingoBall from './BingoBall';
 
 interface AnnouncerProps {
   currentBall: number | null;
@@ -16,20 +16,14 @@ const Announcer = ({ currentBall, recentBalls }: AnnouncerProps) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>CURRENT BALL</Text>
-      <View style={styles.currentBallContainer}>
-        <Text style={styles.currentBallText}>
-          {currentBall ? getBallString(currentBall) : '--'}
-        </Text>
-      </View>
+      <BingoBall value={currentBall || 0} size="large" />
       
       {displayBalls.length > 0 && (
         <View style={styles.recentBallsContainer}>
           <Text style={styles.recentTitle}>Recent Balls</Text>
           <View style={styles.recentBallsRow}>
-            {displayBalls.slice(-3).map((ball, index) => (
-              <Text key={index} style={styles.recentBallText}>
-                {ball}
-              </Text>
+            {displayBalls.map((ball, index) => (
+              <BingoBall key={index} value={ball} size="small" />
             ))}
           </View>
         </View>
@@ -53,24 +47,6 @@ const styles = StyleSheet.create({
     color: '#666',
     textTransform: 'uppercase',
   },
-  currentBallContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 50,
-    width: 120,
-    height: 120,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  currentBallText: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: '#2196f3',
-  },
   recentBallsContainer: {
     marginTop: 15,
   },
@@ -82,15 +58,7 @@ const styles = StyleSheet.create({
   recentBallsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-  },
-  recentBallText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginHorizontal: 8,
-    padding: 4,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 4,
+    gap: 8, // Add spacing between recent balls
   },
 });
 
