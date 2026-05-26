@@ -98,25 +98,33 @@ export const getBallString = (num: number | null): string => {
 };
 
 /**
- * Helper function mapping a ball number to a color
- * @param number The ball number (9)
+ * Helper function mapping a ball number or letter to a color
+ * @param value The ball number (9) or letter
  * @returns A string which is a hex color like #FF3B30
  */
-export function getBallColor(number: number): string {
-  if (number < 1 || number > 75) {
-    return '#8E8E93'; // fallback color for invalid numbers
+export function getBallColor(value?: number | string): string {
+  if (typeof value === 'number') {
+    if (value <= 15) {
+      return '#007AFF'; // B
+    } else if (value <= 30) {
+      return '#34C759'; // I
+    } else if (value <= 45) {
+      return '#FF3B30'; // N
+    } else if (value <= 60) {
+      return '#FF9500'; // G
+    } else {
+      return '#AF52DE'; // O
+    }
   }
-
-  if (number <= 15) {
-    return '#FF3B30'; // B
-  } else if (number <= 30) {
-    return '#007AFF'; // I
-  } else if (number <= 45) {
-    return '#34C759'; // N
-  } else if (number <= 60) {
-    return '#FF9500'; // G
-  } else {
-    return '#AF52DE'; // O
+  
+  const letter = typeof value === 'string' ? value.toUpperCase() : null;
+  switch (letter) {
+    case 'B': return '#007AFF';
+    case 'I': return '#34C759';
+    case 'N': return '#FF3B30';
+    case 'G': return '#FF9500';
+    case 'O': return '#AF52DE';
+    default: return '#E0E0E0';
   }
 }
 

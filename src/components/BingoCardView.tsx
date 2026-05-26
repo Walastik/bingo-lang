@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import { getBallColor } from '../utils/bingoUtils'
 
 interface BingoCard {
   grid: (number | 'FREE')[];
@@ -28,8 +29,8 @@ const BingoCardView: React.FC<BingoCardViewProps> = ({
       {/* Header */}
       <View style={styles.header}>
         {['B', 'I', 'N', 'G', 'O'].map((letter, col) => (
-          <View key={col} style={styles.headerCell}>
-            <Text style={styles.headerText}>{letter}</Text>
+          <View key={col} style={[styles.headerCell, { backgroundColor: getBallColor(letter) }]}>
+            <Text style={[styles.headerText, { color: '#FFF' }]}>{letter}</Text>
           </View>
         ))}
       </View>
@@ -89,11 +90,13 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 8,
   },
   headerText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#FFF',
   },
   grid: {
     flexDirection: 'row',
