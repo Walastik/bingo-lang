@@ -25,6 +25,7 @@ export default function App() {
     startGame,
     daubSpace,
     callBingo,
+    continueGame,
     resetGame,
   } = useBingoGame({ userCardCount: selectedCardCount });
 
@@ -101,21 +102,30 @@ export default function App() {
         </TouchableOpacity>
       </View>
 
-      {/* Overlay for Win/Loss */}
-      {(gameState === 'userWon' || gameState === 'npcWon') && (
+      {/* Overlay for Win/Loss/Invalid Bingo */}
+      {(gameState === 'userWon' || gameState === 'npcWon' || gameState === 'invalidBingo') && (
         <View style={styles.overlay}>
           <View style={styles.overlayContent}>
             <Text style={styles.overlayTitle}>
-              {gameState === 'userWon' ? '🎉 YOU WIN! 🎉' : '😢 NPC Won!'}
+              {gameState === 'userWon' ? '🎉 YOU WIN! 🎉' : 
+                gameState === 'npcWon' ? '😢 NPC Won!' : '❌ Invalid Bingo!'}
             </Text>
             <Text style={styles.overlayMessage}>
               {gameState === 'userWon' 
                 ? 'Great job calling bingo!' 
-                : 'Better luck next time!'}
+                : gameState === 'npcWon' 
+                  ? 'Better luck next time!' 
+                  : 'You don\'t have a bingo! Review your daubs.'}
             </Text>
-            <TouchableOpacity style={styles.playAgainButton} onPress={resetGame}>
-              <Text style={styles.playAgainButtonText}>Play Again</Text>
-            </TouchableOpacity>
+            {gameState === 'invalidBingo' ? (
+              <TouchableOpacity style={styles.continueButton} onPress={continueGame}>
+                <Text style={styles.continueButtonText}>Continue Game</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.playAgainButton} onPress={resetGame}>
+                <Text style={styles.playAgainButtonText}>Play Again</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       )}
@@ -250,6 +260,19 @@ const styles = StyleSheet.create({
     minWidth: 150,
   },
   playAgainButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  continueButton: {
+  backgroundColor: '#FF9500',
+  paddingVertical: 15,
+  paddingHorizontal: 30,
+  borderRadius: 12,
+  minWidth: 150,
+  marginBottom: 15,
+  },
+  continueButtonText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',

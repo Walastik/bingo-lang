@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { BingoCard, generateCard, generateDeck, checkWin } from '../utils/bingoUtils';
 
-type GameState = 'lobby' | 'playing' | 'userWon' | 'npcWon';
+type GameState = 'lobby' | 'playing' | 'userWon' | 'npcWon' | 'invalidBingo';
+
+const BALL_DRAW_INTERVAL_MS = 5000;
 
 interface UseBingoGameParams {
   userCardCount: number;
@@ -83,7 +85,7 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
         }
         setGameState('lobby');
       }
-    }, 6500);
+    }, BALL_DRAW_INTERVAL_MS);
   }, [gameState, drawNextBall]);
 
   const daubSpace = useCallback((cardIndex: number, row: number, col: number) => {
@@ -100,6 +102,8 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
   }, []);
 
   const callBingo = useCallback(() => {
+    let hasWon = false;
+    
     for (let i = 0; i < userCards.length; i++) {
       const cardDaubs = new Set<string>();
       userDaubs.forEach(key => {
@@ -109,15 +113,42 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
       });
 
       if (checkWin(userCards[i], drawnBallsSetRef.current, true, cardDaubs)) {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-        setGameState('userWon');
-        return;
+        hasWon = true;
+        break;
       }
     }
+    
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
+    if (hasWon) {
+      setGameState('userWon');
+    } else {
+      setGameState('invalidBingo');
+    }
   }, [userCards, userDaubs]);
+
+  const continueGame = useCallback(() => {
+    if (gameState === 'invalidBingo') {
+      setGameState('playing');
+      
+      drawNextBall();
+      
+      intervalRef.current = window.setInterval(() => {
+        if (deckRef.current.length > 0) {
+          drawNextBall();
+        } else {
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+          setGameState('lobby');
+        }
+      }, BALL_DRAW_INTERVAL_MS);
+    }
+  }, [gameState, drawNextBall]);
 
   useEffect(() => {
     return () => {
@@ -172,6 +203,7 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     startGame,
     daubSpace,
     callBingo,
+    continueGame,
     resetGame
   };
 };
