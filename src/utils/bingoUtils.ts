@@ -142,50 +142,70 @@ export function checkWin(
   isUser: boolean,
   userDaubedSpaces?: Set<string>
 ): boolean {
-  // Winning patterns: 5 in a row horizontally, vertically, or diagonally
-  const winningPatterns = [
-    // Rows
-    [0, 1, 2, 3, 4],
-    [5, 6, 7, 8, 9],
-    [10, 11, 12, 13, 14],
-    [15, 16, 17, 18, 19],
-    [20, 21, 22, 23, 24],
-    // Columns
-    [0, 5, 10, 15, 20],
-    [1, 6, 11, 16, 21],
-    [2, 7, 12, 17, 22],
-    [3, 8, 13, 18, 23],
-    [4, 9, 14, 19, 24],
-    // Diagonals
-    [0, 6, 12, 18, 24],
-    [4, 8, 12, 16, 20],
-  ];
+  // Helper to check if a cell at (row, col) is marked
+  const isCellMarked = (row: number, col: number): boolean => {
+    // Center free space is always marked
+    if (row === 2 && col === 2) return true;
 
-  // Function to check if a space is considered "marked"
-  const isSpaceMarked = (index: number): boolean => {
-    // Center space (index 12) is always marked as FREE
-    if (index === 12) return true;
-    
-    // Handle NPCs vs user daubing
+    const index = row * 5 + col;
+    const cell = card.grid[index];
+
     if (isUser && userDaubedSpaces) {
-      // For users, check if the space was manually daubed
-      // Determine row and column for this index
-      const row = Math.floor(index / 5);
-      const col = index % 5;
-      const spaceKey = `${row}-${col}`;
-      return userDaubedSpaces.has(spaceKey);
+      // User mode: must have called number AND daubed it
+      if (typeof cell === 'number' && drawnBalls.has(cell)) {
+        return userDaubedSpaces.has(`${row}-${col}`);
+      }
+      return false;
     } else {
-      // For NPCs, check if the number has been drawn
-      const cell = card.grid[index];
+      // NPC mode: only need the number to be drawn
       return typeof cell === 'number' && drawnBalls.has(cell);
     }
   };
 
-  // Check each winning pattern
-  for (const pattern of winningPatterns) {
-    const isPatternFull = pattern.every(index => isSpaceMarked(index));
-    if (isPatternFull) return true;
+  // Check all rows
+  for (let row = 0; row < 5; row++) {
+    let rowFull = true;
+    for (let col = 0; col < 5; col++) {
+      if (!isCellMarked(row, col)) {
+        rowFull = false;
+        break;
+      }
+    }
+    if (rowFull) return true;
   }
+
+  // Check all columns
+  for (let col = 0; col < 5; col++) {
+    let colFull = true;
+    for (let row = 0; row < 5; row++) {
+      if (!isCellMarked(row, col)) {
+        colFull = false;
+        break;
+      }
+    }
+    if (colFull) return true;
+  }
+
+  // Check diagonals
+  // Top-left to bottom-right
+  let diagonal1 = true;
+  for (let i = 0; i < 5; i++) {
+    if (!isCellMarked(i, i)) {
+      diagonal1 = false;
+      break;
+    }
+  }
+  if (diagonal1) return true;
+
+  // Top-right to bottom-left
+  let diagonal2 = true;
+  for (let i = 0; i < 5; i++) {
+    if (!isCellMarked(i, 4 - i)) {
+      diagonal2 = false;
+      break;
+    }
+  }
+  if (diagonal2) return true;
 
   return false;
 }

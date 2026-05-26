@@ -108,7 +108,7 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
         }
       });
 
-      if (checkWin(userCards[i], new Set(), true, cardDaubs)) {
+      if (checkWin(userCards[i], drawnBallsSetRef.current, true, cardDaubs)) {
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
           intervalRef.current = null;
