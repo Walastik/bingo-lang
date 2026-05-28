@@ -12,14 +12,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import useBingoGame from './src/hooks/useBingoGame';
 import BingoCardView from './src/components/BingoCardView';
 import Announcer from './src/components/Announcer';
+import CalledBallsBoard from './src/components/CalledBallsBoard';
 
 export default function App() {
   const [selectedCardCount, setSelectedCardCount] = useState<number>(1);
+  const [showCalledBallsBoard, setShowCalledBallsBoard] = useState(false);
   
   const {
     gameState,
     userCards,
     currentBall,
+    upcomingBall,
     drawnBalls,
     userDaubs,
     startGame,
@@ -27,6 +30,8 @@ export default function App() {
     callBingo,
     continueGame,
     resetGame,
+    isPaused,
+    togglePause,
   } = useBingoGame({ userCardCount: selectedCardCount });
 
   // --- RENDER: LOBBY ---
@@ -67,7 +72,21 @@ export default function App() {
       <StatusBar barStyle="light-content" />
       
       {/* Use our real Announcer component */}
-      <Announcer currentBall={currentBall} recentBalls={drawnBalls} />
+      <Announcer
+        currentBall={currentBall}
+        upcomingBall={upcomingBall}
+        recentBalls={drawnBalls}
+        isPaused={isPaused}
+        showPauseControl={gameState === 'playing'}
+        onTogglePause={togglePause}
+        onRecentPress={() => setShowCalledBallsBoard(true)}
+      />
+
+      <CalledBallsBoard
+        calledBalls={drawnBalls}
+        visible={showCalledBallsBoard}
+        onClose={() => setShowCalledBallsBoard(false)}
+      />
 
       {/* Render the actual user cards using our real BingoCardView */}
       <ScrollView 
