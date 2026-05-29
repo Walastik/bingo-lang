@@ -220,6 +220,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100, 
   },
   cardWrapper: {
+    width: '100%',
     marginBottom: 20,
   },
   floatingButtonContainer: {

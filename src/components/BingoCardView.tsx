@@ -8,6 +8,9 @@ import {
 import { getBallColor } from '../utils/bingoUtils';
 import { ACTIVE_WIN_PATTERNS } from '../utils/winPatterns';
 
+const GRID_GAP = 4;
+const GRID_COLUMNS = 5;
+
 interface BingoCard {
   grid: (number | 'FREE')[];
 }
@@ -29,6 +32,12 @@ const BingoCardView: React.FC<BingoCardViewProps> = ({
 }) => {
   const [isPreviewEnabled, setIsPreviewEnabled] = useState(false);
   const [activePatternIndex, setActivePatternIndex] = useState(0);
+  const [gridWidth, setGridWidth] = useState(0);
+
+  const cellSize =
+    gridWidth > 0
+      ? Math.floor((gridWidth - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS)
+      : 0;
 
   useEffect(() => {
     if (!isPreviewEnabled) {
@@ -67,9 +76,6 @@ const BingoCardView: React.FC<BingoCardViewProps> = ({
   return (
     <View style={styles.card}>
       <View style={styles.cardTopRow}>
-        <Text style={styles.patternLabel}>
-          {isPreviewEnabled ? ACTIVE_WIN_PATTERNS[activePatternIndex].label : 'Win preview off'}
-        </Text>
         <TouchableOpacity
           style={styles.previewToggleButton}
           onPress={togglePreview}
@@ -79,6 +85,9 @@ const BingoCardView: React.FC<BingoCardViewProps> = ({
             {isPreviewEnabled ? '👁' : '🙈'}
           </Text>
         </TouchableOpacity>
+        <Text style={styles.patternLabel}>
+          {isPreviewEnabled ? ACTIVE_WIN_PATTERNS[activePatternIndex].label : 'Win preview off'}
+        </Text>
       </View>
 
       <View style={styles.header}>
@@ -94,41 +103,62 @@ const BingoCardView: React.FC<BingoCardViewProps> = ({
         ))}
       </View>
 
-      {/* Grid */}
-      <View style={styles.grid}>
-        {card.grid.map((cell, flatIndex) => {
-          const row = Math.floor(flatIndex / 5);
-          const col = flatIndex % 5;
-          const isFree = cell === 'FREE';
-          const isDaubed = userDaubs.has(`${cardIndex}-${row}-${col}`);
-          const isPreviewCellActive = activePreviewCells.has(`${row}-${col}`);
+      <View
+        style={styles.grid}
+        onLayout={(event) => {
+          const nextWidth = event.nativeEvent.layout.width;
+          if (nextWidth !== gridWidth) {
+            setGridWidth(nextWidth);
+          }
+        }}
+      >
+        {cellSize > 0 &&
+          Array.from({ length: 5 }, (_, row) => (
+            <View key={row} style={[styles.gridRow, { height: cellSize }]}>
+              {card.grid.slice(row * 5, row * 5 + 5).map((cell, col) => {
+                const flatIndex = row * 5 + col;
+                const isFree = cell === 'FREE';
+                const isDaubed = userDaubs.has(`${cardIndex}-${row}-${col}`);
+                const isPreviewCellActive = activePreviewCells.has(`${row}-${col}`);
 
-          return (
-            <TouchableOpacity
-              key={flatIndex}
-              style={[
-                styles.cell,
-                isDaubed && styles.cellDaubed,
-              ]}
-              onPress={() => !isFree && onCellPress(flatIndex)}
-              activeOpacity={0.7}
-              disabled={isFree}
-            >
-              <Text style={[
-                styles.cellText,
-                isDaubed && styles.cellTextDaubed
-              ]}>
-                {isFree ? '★' : cell}
-              </Text>
-              {isDaubed && !isFree && (
-                <View style={styles.daubMarker} />
-              )}
-              {isPreviewCellActive && (
-                <View pointerEvents="none" style={styles.winPreviewMarker} />
-              )}
-            </TouchableOpacity>
-          );
-        })}
+                return (
+                  <TouchableOpacity
+                    key={flatIndex}
+                    style={[
+                      styles.cell,
+                      { width: cellSize, height: cellSize },
+                      isDaubed && styles.cellDaubed,
+                    ]}
+                    onPress={() => !isFree && onCellPress(flatIndex)}
+                    activeOpacity={0.7}
+                    disabled={isFree}
+                  >
+                    <Text style={[
+                      styles.cellText,
+                      isDaubed && styles.cellTextDaubed,
+                    ]}>
+                      {isFree ? '★' : cell}
+                    </Text>
+                    {isDaubed && !isFree && (
+                      <View
+                        style={[
+                          styles.daubMarker,
+                          {
+                            width: cellSize * 0.85,
+                            height: cellSize * 0.85,
+                            borderRadius: cellSize * 0.425,
+                          },
+                        ]}
+                      />
+                    )}
+                    {isPreviewCellActive && (
+                      <View pointerEvents="none" style={styles.winPreviewMarker} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))}
       </View>
     </View>
   );
@@ -136,6 +166,7 @@ const BingoCardView: React.FC<BingoCardViewProps> = ({
 
 const styles = StyleSheet.create({
   card: {
+    width: '100%',
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 10,
@@ -148,7 +179,7 @@ const styles = StyleSheet.create({
   cardTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 8,
     marginBottom: 10,
   },
   patternLabel: {
@@ -171,6 +202,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
+    gap: GRID_GAP,
     marginBottom: 10,
   },
   headerCell: {
@@ -186,18 +218,18 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
   grid: {
+    width: '100%',
+    gap: GRID_GAP,
+  },
+  gridRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    gap: GRID_GAP,
   },
   cell: {
-    width: '19%',
-    aspectRatio: 1,
     backgroundColor: '#f0f0f0',
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 2,
     position: 'relative',
   },
   cellDaubed: {
@@ -213,9 +245,6 @@ const styles = StyleSheet.create({
   },
   daubMarker: {
     position: 'absolute',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
     backgroundColor: 'rgba(0, 122, 255, 0.3)',
     zIndex: 1,
   },
