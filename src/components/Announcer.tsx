@@ -222,6 +222,9 @@ const Announcer = ({
 
   const windowPreviewBall = upcomingBall ?? null;
   const windowCalledPreview = windowCalledBall;
+  const calledBallsCount = recentBalls.length;
+  const calledBallsLabel =
+    calledBallsCount >= 4 ? `Called Balls (${calledBallsCount})` : 'Called Balls';
 
   return (
     <View style={styles.container}>
@@ -287,10 +290,16 @@ const Announcer = ({
           disabled={!onRecentPress}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="View all called balls"
+          accessibilityLabel={
+            calledBallsCount >= 4
+              ? `View all called balls, ${calledBallsCount} called`
+              : 'View all called balls'
+          }
           accessibilityHint="Opens the full called balls board"
         >
-          <Text style={styles.label}>Called Balls</Text>
+          <View style={[styles.calledBallsButton, !onRecentPress && styles.calledBallsButtonDisabled]}>
+            <Text style={styles.calledBallsButtonText}>{calledBallsLabel}</Text>
+          </View>
           <View style={[styles.recentRow, isShifting && styles.recentRowClipped]}>
             <RecentBallsRow
               balls={recentBallsToShow}
@@ -377,6 +386,25 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'flex-end',
     minWidth: RECENT_ROW_WIDTH,
+  },
+  calledBallsButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#E6F2FF',
+    borderWidth: 1,
+    borderColor: '#A8CEFF',
+    marginBottom: 6,
+  },
+  calledBallsButtonDisabled: {
+    opacity: 0.6,
+  },
+  calledBallsButtonText: {
+    fontSize: 11,
+    color: '#0051A8',
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    fontWeight: '600',
   },
   recentRow: {
     flexDirection: 'row',
