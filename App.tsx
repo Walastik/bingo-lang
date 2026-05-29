@@ -4,13 +4,12 @@ import {
   Text,
   View,
   TouchableOpacity,
-  ScrollView,
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import useBingoGame from './src/hooks/useBingoGame';
-import BingoCardView from './src/components/BingoCardView';
+import BingoCardCarousel from './src/components/BingoCardCarousel';
 import Announcer from './src/components/Announcer';
 import CalledBallsBoard from './src/components/CalledBallsBoard';
 
@@ -89,30 +88,22 @@ export default function App() {
         onClose={() => setShowCalledBallsBoard(false)}
       />
 
-      {/* Render the actual user cards using our real BingoCardView */}
-      <ScrollView 
-        style={styles.cardsContainer} 
-        contentContainerStyle={styles.cardsContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {userCards?.map((card, index) => (
-          <View key={`card-${index}`} style={styles.cardWrapper}>
-            <BingoCardView 
-              card={card}
-              cardIndex={index}
-              userDaubs={userDaubs}
-              onCellPress={(flatIndex) => {
-                const row = Math.floor(flatIndex / 5);
-                const col = flatIndex % 5;
-                daubSpace(index, row, col);
-              }}
-              onHeaderPress={(col) => {
-                autoDaubColumn(index, col);
-              }}
-            />
-          </View>
-        ))}
-      </ScrollView>
+      <View style={styles.cardsContainer}>
+        {userCards && userCards.length > 0 && (
+          <BingoCardCarousel
+            cards={userCards}
+            userDaubs={userDaubs}
+            onCellPress={(cardIndex, flatIndex) => {
+              const row = Math.floor(flatIndex / 5);
+              const col = flatIndex % 5;
+              daubSpace(cardIndex, row, col);
+            }}
+            onHeaderPress={(cardIndex, col) => {
+              autoDaubColumn(cardIndex, col);
+            }}
+          />
+        )}
+      </View>
 
       {/* Floating Bingo Button */}
       <View style={styles.floatingButtonContainer}>
@@ -213,15 +204,9 @@ const styles = StyleSheet.create({
   },
   cardsContainer: {
     flex: 1,
-    padding: 10,
-  },
-  cardsContent: {
-    alignItems: 'center',
-    paddingBottom: 100, 
-  },
-  cardWrapper: {
-    width: '100%',
-    marginBottom: 20,
+    paddingHorizontal: 10,
+    paddingTop: 10,
+    paddingBottom: 100,
   },
   floatingButtonContainer: {
     position: 'absolute',
