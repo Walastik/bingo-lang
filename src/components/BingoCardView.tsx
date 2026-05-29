@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import { getBallColor } from '../utils/bingoUtils'
+import { getBallColor } from '../utils/bingoUtils';
+import { ACTIVE_WIN_PATTERNS } from '../utils/winPatterns';
 
 interface BingoCard {
   grid: (number | 'FREE')[];
@@ -16,22 +17,80 @@ interface BingoCardViewProps {
   cardIndex: number;
   userDaubs: Set<string>;
   onCellPress: (flatIndex: number) => void;
+  onHeaderPress: (col: number) => void;
 }
 
 const BingoCardView: React.FC<BingoCardViewProps> = ({ 
   card, 
   cardIndex, 
   userDaubs, 
-  onCellPress 
+  onCellPress,
+  onHeaderPress
 }) => {
+  const [isPreviewEnabled, setIsPreviewEnabled] = useState(false);
+  const [activePatternIndex, setActivePatternIndex] = useState(0);
+
+  useEffect(() => {
+    if (!isPreviewEnabled) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setActivePatternIndex(prev => (prev + 1) % ACTIVE_WIN_PATTERNS.length);
+    }, 750);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [isPreviewEnabled]);
+
+  const activePreviewCells = useMemo(() => {
+    if (!isPreviewEnabled) {
+      return new Set<string>();
+    }
+
+    return new Set(
+      ACTIVE_WIN_PATTERNS[activePatternIndex].cells.map(({ row, col }) => `${row}-${col}`)
+    );
+  }, [isPreviewEnabled, activePatternIndex]);
+
+  const togglePreview = () => {
+    setIsPreviewEnabled(prev => {
+      const next = !prev;
+      if (next) {
+        setActivePatternIndex(0);
+      }
+      return next;
+    });
+  };
+
   return (
     <View style={styles.card}>
-      {/* Header */}
+      <View style={styles.cardTopRow}>
+        <Text style={styles.patternLabel}>
+          {isPreviewEnabled ? ACTIVE_WIN_PATTERNS[activePatternIndex].label : 'Win preview off'}
+        </Text>
+        <TouchableOpacity
+          style={styles.previewToggleButton}
+          onPress={togglePreview}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.previewToggleIcon}>
+            {isPreviewEnabled ? '👁' : '🙈'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.header}>
         {['B', 'I', 'N', 'G', 'O'].map((letter, col) => (
-          <View key={col} style={[styles.headerCell, { backgroundColor: getBallColor(letter) }]}>
+          <TouchableOpacity
+            key={col}
+            style={[styles.headerCell, { backgroundColor: getBallColor(letter) }]}
+            onPress={() => onHeaderPress(col)}
+            activeOpacity={0.8}
+          >
             <Text style={[styles.headerText, { color: '#FFF' }]}>{letter}</Text>
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
 
@@ -42,6 +101,7 @@ const BingoCardView: React.FC<BingoCardViewProps> = ({
           const col = flatIndex % 5;
           const isFree = cell === 'FREE';
           const isDaubed = userDaubs.has(`${cardIndex}-${row}-${col}`);
+          const isPreviewCellActive = activePreviewCells.has(`${row}-${col}`);
 
           return (
             <TouchableOpacity
@@ -63,6 +123,9 @@ const BingoCardView: React.FC<BingoCardViewProps> = ({
               {isDaubed && !isFree && (
                 <View style={styles.daubMarker} />
               )}
+              {isPreviewCellActive && (
+                <View pointerEvents="none" style={styles.winPreviewMarker} />
+              )}
             </TouchableOpacity>
           );
         })}
@@ -81,6 +144,30 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  patternLabel: {
+    fontSize: 13,
+    color: '#2E7D32',
+    fontWeight: '600',
+  },
+  previewToggleButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E9F7EC',
+    borderWidth: 1,
+    borderColor: '#B7DEBE',
+  },
+  previewToggleIcon: {
+    fontSize: 18,
   },
   header: {
     flexDirection: 'row',
@@ -131,6 +218,14 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     backgroundColor: 'rgba(0, 122, 255, 0.3)',
     zIndex: 1,
+  },
+  winPreviewMarker: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 8,
+    backgroundColor: 'rgba(52, 199, 89, 0.4)',
+    borderWidth: 1,
+    borderColor: 'rgba(46, 125, 50, 0.75)',
+    zIndex: 3,
   },
 });
 

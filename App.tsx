@@ -27,6 +27,7 @@ export default function App() {
     userDaubs,
     startGame,
     daubSpace,
+    autoDaubColumn,
     callBingo,
     continueGame,
     resetGame,
@@ -104,6 +105,9 @@ export default function App() {
                 const row = Math.floor(flatIndex / 5);
                 const col = flatIndex % 5;
                 daubSpace(index, row, col);
+              }}
+              onHeaderPress={(col) => {
+                autoDaubColumn(index, col);
               }}
             />
           </View>

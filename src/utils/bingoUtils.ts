@@ -1,3 +1,5 @@
+import { ACTIVE_WIN_PATTERNS } from './winPatterns';
+
 // src/types.ts
 
 export interface BingoCard {
@@ -142,9 +144,7 @@ export function checkWin(
   isUser: boolean,
   userDaubedSpaces?: Set<string>
 ): boolean {
-  // Helper to check if a cell at (row, col) is marked
   const isCellMarked = (row: number, col: number): boolean => {
-    // Center free space is always marked
     if (row === 2 && col === 2) return true;
 
     const index = row * 5 + col;
@@ -162,50 +162,7 @@ export function checkWin(
     }
   };
 
-  // Check all rows
-  for (let row = 0; row < 5; row++) {
-    let rowFull = true;
-    for (let col = 0; col < 5; col++) {
-      if (!isCellMarked(row, col)) {
-        rowFull = false;
-        break;
-      }
-    }
-    if (rowFull) return true;
-  }
-
-  // Check all columns
-  for (let col = 0; col < 5; col++) {
-    let colFull = true;
-    for (let row = 0; row < 5; row++) {
-      if (!isCellMarked(row, col)) {
-        colFull = false;
-        break;
-      }
-    }
-    if (colFull) return true;
-  }
-
-  // Check diagonals
-  // Top-left to bottom-right
-  let diagonal1 = true;
-  for (let i = 0; i < 5; i++) {
-    if (!isCellMarked(i, i)) {
-      diagonal1 = false;
-      break;
-    }
-  }
-  if (diagonal1) return true;
-
-  // Top-right to bottom-left
-  let diagonal2 = true;
-  for (let i = 0; i < 5; i++) {
-    if (!isCellMarked(i, 4 - i)) {
-      diagonal2 = false;
-      break;
-    }
-  }
-  if (diagonal2) return true;
-
-  return false;
+  return ACTIVE_WIN_PATTERNS.some(pattern =>
+    pattern.cells.every(({ row, col }) => isCellMarked(row, col))
+  );
 }

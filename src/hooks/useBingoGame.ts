@@ -227,6 +227,31 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     });
   }, []);
 
+  const autoDaubColumn = useCallback((cardIndex: number, col: number) => {
+    const card = userCards[cardIndex];
+    if (!card || col < 0 || col > 4) {
+      return;
+    }
+
+    setUserDaubs(prev => {
+      const next = new Set(prev);
+
+      for (let row = 0; row < 5; row++) {
+        const key = `${cardIndex}-${row}-${col}`;
+        const flatIndex = row * 5 + col;
+        const cell = card.grid[flatIndex];
+
+        if (typeof cell === 'number' && drawnBallsSetRef.current.has(cell)) {
+          next.add(key);
+        } else {
+          next.delete(key);
+        }
+      }
+
+      return next;
+    });
+  }, [userCards]);
+
   const callBingo = useCallback(() => {
     let hasWon = false;
     
@@ -326,6 +351,7 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     resumeGame,
     togglePause,
     daubSpace,
+    autoDaubColumn,
     callBingo,
     continueGame,
     resetGame

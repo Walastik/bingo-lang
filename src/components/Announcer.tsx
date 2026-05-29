@@ -290,7 +290,7 @@ const Announcer = ({
           accessibilityLabel="View all called balls"
           accessibilityHint="Opens the full called balls board"
         >
-          <Text style={styles.label}>Recent</Text>
+          <Text style={styles.label}>Called Balls</Text>
           <View style={[styles.recentRow, isShifting && styles.recentRowClipped]}>
             <RecentBallsRow
               balls={recentBallsToShow}
