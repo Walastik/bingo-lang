@@ -14,17 +14,22 @@ import BingoCardView from './BingoCardView';
 
 interface BingoCardCarouselProps {
   cards: BingoCard[];
+  /** Real card indices aligned with `cards` (for daub keys). Defaults to 0..n-1. */
+  cardIndices?: number[];
   userDaubs: Set<string>;
-  onCellPress: (cardIndex: number, flatIndex: number) => void;
-  onHeaderPress: (cardIndex: number, col: number) => void;
+  onCellPress: (displayIndex: number, flatIndex: number) => void;
+  onHeaderPress: (displayIndex: number, col: number) => void;
 }
 
 const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
   cards,
+  cardIndices,
   userDaubs,
   onCellPress,
   onHeaderPress,
 }) => {
+  const resolvedCardIndices =
+    cardIndices ?? cards.map((_, index) => index);
   const listRef = useRef<FlatList<BingoCard>>(null);
   const [pageWidth, setPageWidth] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -70,14 +75,14 @@ const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
       <View style={[styles.page, { width: pageWidth }]}>
         <BingoCardView
           card={item}
-          cardIndex={index}
+          cardIndex={resolvedCardIndices[index]}
           userDaubs={userDaubs}
           onCellPress={(flatIndex) => onCellPress(index, flatIndex)}
           onHeaderPress={(col) => onHeaderPress(index, col)}
         />
       </View>
     ),
-    [onCellPress, onHeaderPress, pageWidth, userDaubs],
+    [onCellPress, onHeaderPress, pageWidth, resolvedCardIndices, userDaubs],
   );
 
   if (cardCount === 0) {
@@ -89,7 +94,7 @@ const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
       <View style={styles.singleCardContainer}>
         <BingoCardView
           card={cards[0]}
-          cardIndex={0}
+          cardIndex={resolvedCardIndices[0]}
           userDaubs={userDaubs}
           onCellPress={(flatIndex) => onCellPress(0, flatIndex)}
           onHeaderPress={(col) => onHeaderPress(0, col)}
@@ -112,7 +117,7 @@ const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
         <FlatList
           ref={listRef}
           data={cards}
-          keyExtractor={(_, index) => `card-${index}`}
+          keyExtractor={(item) => item.id}
           renderItem={renderItem}
           horizontal
           pagingEnabled

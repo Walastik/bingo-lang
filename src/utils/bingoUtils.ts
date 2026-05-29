@@ -166,3 +166,96 @@ export function checkWin(
     pattern.cells.every(({ row, col }) => isCellMarked(row, col))
   );
 }
+
+/**
+ * Minimum number of uncalled balls still needed to complete any winning line.
+ * Called-but-not-daubed cells count as 0 additional balls (manual) or as complete (auto).
+ */
+export function getBallsNeededForBingo(
+  card: BingoCard,
+  drawnBalls: Set<number>,
+  cardIndex: number,
+  userDaubs: Set<string>,
+  isAutoMode: boolean,
+): number {
+  const isCellMarked = (row: number, col: number): boolean => {
+    if (row === 2 && col === 2) {
+      return true;
+    }
+
+    const index = row * 5 + col;
+    const cell = card.grid[index];
+
+    if (typeof cell !== 'number') {
+      return true;
+    }
+
+    if (!drawnBalls.has(cell)) {
+      return false;
+    }
+
+    if (isAutoMode) {
+      return true;
+    }
+
+    return userDaubs.has(`${cardIndex}-${row}-${col}`);
+  };
+
+  let minNeeded = 25;
+
+  for (const pattern of ACTIVE_WIN_PATTERNS) {
+    let needed = 0;
+
+    for (const { row, col } of pattern.cells) {
+      if (isCellMarked(row, col)) {
+        continue;
+      }
+
+      const index = row * 5 + col;
+      const cell = card.grid[index];
+
+      if (typeof cell === 'number' && !drawnBalls.has(cell)) {
+        needed += 1;
+      }
+    }
+
+    minNeeded = Math.min(minNeeded, needed);
+  }
+
+  return minNeeded;
+}
+
+/**
+ * Display order for user cards: closest to bingo first.
+ */
+export function sortCardIndicesByProximity(
+  cards: BingoCard[],
+  drawnBalls: Set<number>,
+  userDaubs: Set<string>,
+  isAutoMode: boolean,
+): number[] {
+  return cards
+    .map((_, index) => index)
+    .sort((a, b) => {
+      const neededA = getBallsNeededForBingo(
+        cards[a],
+        drawnBalls,
+        a,
+        userDaubs,
+        isAutoMode,
+      );
+      const neededB = getBallsNeededForBingo(
+        cards[b],
+        drawnBalls,
+        b,
+        userDaubs,
+        isAutoMode,
+      );
+
+      if (neededA !== neededB) {
+        return neededA - neededB;
+      }
+
+      return a - b;
+    });
+}

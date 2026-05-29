@@ -32,6 +32,9 @@ export default function App() {
     resetGame,
     isPaused,
     togglePause,
+    isAutoMode,
+    toggleAutoMode,
+    cardOrder,
   } = useBingoGame({ userCardCount: selectedCardCount });
 
   // --- RENDER: LOBBY ---
@@ -79,6 +82,9 @@ export default function App() {
         isPaused={isPaused}
         showPauseControl={gameState === 'playing'}
         onTogglePause={togglePause}
+        isAutoMode={isAutoMode}
+        showAutoControl={gameState === 'playing'}
+        onToggleAutoMode={toggleAutoMode}
         onRecentPress={() => setShowCalledBallsBoard(true)}
       />
 
@@ -91,15 +97,17 @@ export default function App() {
       <View style={styles.cardsContainer}>
         {userCards && userCards.length > 0 && (
           <BingoCardCarousel
-            cards={userCards}
+            cards={cardOrder.map(index => userCards[index])}
+            cardIndices={cardOrder}
             userDaubs={userDaubs}
-            onCellPress={(cardIndex, flatIndex) => {
+            onCellPress={(displayIndex, flatIndex) => {
+              const cardIndex = cardOrder[displayIndex];
               const row = Math.floor(flatIndex / 5);
               const col = flatIndex % 5;
               daubSpace(cardIndex, row, col);
             }}
-            onHeaderPress={(cardIndex, col) => {
-              autoDaubColumn(cardIndex, col);
+            onHeaderPress={(displayIndex, col) => {
+              autoDaubColumn(cardOrder[displayIndex], col);
             }}
           />
         )}

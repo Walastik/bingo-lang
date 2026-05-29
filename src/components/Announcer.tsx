@@ -17,6 +17,9 @@ interface AnnouncerProps {
   isPaused: boolean;
   showPauseControl: boolean;
   onTogglePause: () => void;
+  isAutoMode?: boolean;
+  showAutoControl?: boolean;
+  onToggleAutoMode?: () => void;
   onRecentPress?: () => void;
 }
 
@@ -97,6 +100,9 @@ const Announcer = ({
   isPaused,
   showPauseControl,
   onTogglePause,
+  isAutoMode = false,
+  showAutoControl = false,
+  onToggleAutoMode,
   onRecentPress,
 }: AnnouncerProps) => {
   const previousBalls = recentBalls.filter((ball) => ball !== currentBall);
@@ -229,58 +235,79 @@ const Announcer = ({
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        <View style={styles.nextColumn}>
-          {showPauseControl && (
-            <TouchableOpacity
-              style={styles.pauseButton}
-              onPress={onTogglePause}
-              accessibilityRole="button"
-              accessibilityLabel={isPaused ? 'Resume game' : 'Pause game'}
-            >
-              <Text style={styles.pauseIcon}>{isPaused ? '▶' : '⏸'}</Text>
-            </TouchableOpacity>
-          )}
-          <Text style={styles.label}>Next Ball</Text>
-          <View style={styles.windowBox}>
-            {windowPreviewBall !== null && (
-              <BingoBall value={windowPreviewBall} size="small" flat={IS_ANDROID} />
+        <View style={styles.leftGroup}>
+          <View style={styles.nextColumn}>
+            {(showPauseControl || showAutoControl) && (
+              <View style={styles.controlRow}>
+                {showPauseControl && (
+                  <TouchableOpacity
+                    style={styles.controlButton}
+                    onPress={onTogglePause}
+                    accessibilityRole="button"
+                    accessibilityLabel={isPaused ? 'Resume game' : 'Pause game'}
+                  >
+                    <Text style={styles.controlIcon}>{isPaused ? '▶' : '⏸'}</Text>
+                  </TouchableOpacity>
+                )}
+                {showAutoControl && onToggleAutoMode && (
+                  <TouchableOpacity
+                    style={[
+                      styles.controlButton,
+                      isAutoMode && styles.controlButtonActive,
+                    ]}
+                    onPress={onToggleAutoMode}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      isAutoMode ? 'Switch to manual daubing' : 'Switch to auto daubing'
+                    }
+                  >
+                    <Text style={styles.controlIcon}>🤖</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             )}
-            {windowPreviewBall === null && windowCalledPreview !== null && (
-              <Animated.View style={{ opacity: windowCalledOpacity }}>
-                <BingoBall value={windowCalledPreview} size="small" flat={IS_ANDROID} />
-              </Animated.View>
-            )}
+            <Text style={styles.label}>Next Ball</Text>
+            <View style={styles.windowBox}>
+              {windowPreviewBall !== null && (
+                <BingoBall value={windowPreviewBall} size="small" flat={IS_ANDROID} />
+              )}
+              {windowPreviewBall === null && windowCalledPreview !== null && (
+                <Animated.View style={{ opacity: windowCalledOpacity }}>
+                  <BingoBall value={windowCalledPreview} size="small" flat={IS_ANDROID} />
+                </Animated.View>
+              )}
+            </View>
           </View>
-        </View>
 
-        <View style={styles.centerColumn}>
-          <Text style={styles.label}>Current Ball</Text>
-          <View
-            style={styles.currentSlot}
-            collapsable={false}
-            renderToHardwareTextureAndroid={IS_ANDROID}
-          >
-            {!isTransitioning && currentBall !== null && (
-              <Animated.View style={{ opacity: currentOpacity }}>
-                <BingoBall value={currentBall} size="large" flat={IS_ANDROID} />
-              </Animated.View>
-            )}
+          <View style={styles.centerColumn}>
+            <Text style={styles.label}>Current Ball</Text>
+            <View
+              style={styles.currentSlot}
+              collapsable={false}
+              renderToHardwareTextureAndroid={IS_ANDROID}
+            >
+              {!isTransitioning && currentBall !== null && (
+                <Animated.View style={{ opacity: currentOpacity }}>
+                  <BingoBall value={currentBall} size="large" flat={IS_ANDROID} />
+                </Animated.View>
+              )}
 
-            {slideValue !== null && (
-              <Animated.View
-                pointerEvents="none"
-                collapsable={false}
-                renderToHardwareTextureAndroid={IS_ANDROID}
-                style={[
-                  styles.slideClip,
-                  {
-                    transform: [{ scale: slideScale }, { translateX: slideTranslateX }],
-                  },
-                ]}
-              >
-                <BingoBall value={slideValue} size="large" flat />
-              </Animated.View>
-            )}
+              {slideValue !== null && (
+                <Animated.View
+                  pointerEvents="none"
+                  collapsable={false}
+                  renderToHardwareTextureAndroid={IS_ANDROID}
+                  style={[
+                    styles.slideClip,
+                    {
+                      transform: [{ scale: slideScale }, { translateX: slideTranslateX }],
+                    },
+                  ]}
+                >
+                  <BingoBall value={slideValue} size="large" flat />
+                </Animated.View>
+              )}
+            </View>
           </View>
         </View>
 
@@ -298,7 +325,14 @@ const Announcer = ({
           accessibilityHint="Opens the full called balls board"
         >
           <View style={[styles.calledBallsButton, !onRecentPress && styles.calledBallsButtonDisabled]}>
-            <Text style={styles.calledBallsButtonText}>{calledBallsLabel}</Text>
+            <Text
+              style={styles.calledBallsButtonText}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+            >
+              {calledBallsLabel}
+            </Text>
           </View>
           <View style={[styles.recentRow, isShifting && styles.recentRowClipped]}>
             <RecentBallsRow
@@ -316,17 +350,24 @@ const Announcer = ({
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 14,
-    paddingHorizontal: 12,
+    paddingLeft: 6,
+    paddingRight: 8,
     backgroundColor: '#f5f5f5',
     borderRadius: 10,
-    marginHorizontal: 12,
+    marginHorizontal: 10,
     marginVertical: 8,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    gap: 8,
+  },
+  leftGroup: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 4,
+    flexShrink: 1,
+    minWidth: 0,
   },
   label: {
     fontSize: 11,
@@ -337,18 +378,30 @@ const styles = StyleSheet.create({
   },
   nextColumn: {
     alignItems: 'center',
-    width: 76,
+    width: 88,
+    marginLeft: -4,
+    flexShrink: 0,
   },
-  pauseButton: {
+  controlRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  controlButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: '#e8e8e8',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
   },
-  pauseIcon: {
+  controlButtonActive: {
+    backgroundColor: '#D4EDFF',
+    borderWidth: 2,
+    borderColor: '#007AFF',
+  },
+  controlIcon: {
     fontSize: 18,
     color: '#333',
     lineHeight: 22,
@@ -383,11 +436,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   recentColumn: {
-    flex: 1,
+    flexShrink: 0,
     alignItems: 'flex-end',
-    minWidth: RECENT_ROW_WIDTH,
+    marginLeft: 10,
   },
   calledBallsButton: {
+    alignSelf: 'flex-end',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,

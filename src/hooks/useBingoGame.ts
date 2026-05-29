@@ -1,5 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { BingoCard, generateCard, generateDeck, checkWin } from '../utils/bingoUtils';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import {
+  BingoCard,
+  generateCard,
+  generateDeck,
+  checkWin,
+  sortCardIndicesByProximity,
+} from '../utils/bingoUtils';
 
 type GameState = 'lobby' | 'playing' | 'userWon' | 'npcWon' | 'invalidBingo';
 
@@ -20,8 +26,10 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
   const [userDaubs, setUserDaubs] = useState<Set<string>>(new Set());
   const [gameState, setGameState] = useState<GameState>('lobby');
   const [isPaused, setIsPaused] = useState(false);
+  const [isAutoMode, setIsAutoMode] = useState(false);
   
   const deckRef = useRef<number[]>([]);
+  const userCardsRef = useRef<BingoCard[]>([]);
   const drawnBallsSetRef = useRef<Set<number>>(new Set());
   const drawTimerRef = useRef<number | null>(null);
   const upcomingBallTimeoutRef = useRef<number | null>(null);
@@ -30,6 +38,7 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
   const remainingDrawMsRef = useRef<number | null>(null);
   const remainingUpcomingRevealMsRef = useRef<number | null>(null);
   const isPausedRef = useRef(false);
+  const isAutoModeRef = useRef(false);
   const gameStateRef = useRef<GameState>('lobby');
 
   const clearDrawTimer = useCallback(() => {
@@ -89,12 +98,62 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     setCurrentBall(null);
     setUpcomingBall(null);
     setUserDaubs(new Set());
+    setIsAutoMode(false);
+    isAutoModeRef.current = false;
     setGameState('lobby');
   }, [userCardCount]);
 
   useEffect(() => {
     npcCardsRef.current = npcCards;
   }, [npcCards]);
+
+  useEffect(() => {
+    userCardsRef.current = userCards;
+  }, [userCards]);
+
+  const applyAutoDaubsForDrawnBalls = useCallback(() => {
+    if (!isAutoModeRef.current) {
+      return;
+    }
+
+    setUserDaubs(prev => {
+      const next = new Set(prev);
+
+      userCardsRef.current.forEach((card, cardIndex) => {
+        for (let row = 0; row < 5; row++) {
+          for (let col = 0; col < 5; col++) {
+            const flatIndex = row * 5 + col;
+            const cell = card.grid[flatIndex];
+
+            if (typeof cell === 'number' && drawnBallsSetRef.current.has(cell)) {
+              next.add(`${cardIndex}-${row}-${col}`);
+            }
+          }
+        }
+      });
+
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    isAutoModeRef.current = isAutoMode;
+
+    if (isAutoMode) {
+      applyAutoDaubsForDrawnBalls();
+    }
+  }, [isAutoMode, applyAutoDaubsForDrawnBalls]);
+
+  const cardOrder = useMemo(
+    () =>
+      sortCardIndicesByProximity(
+        userCards,
+        new Set(drawnBalls),
+        userDaubs,
+        isAutoMode,
+      ),
+    [userCards, drawnBalls, userDaubs, isAutoMode],
+  );
 
   const drawNextBall = useCallback(() => {
     clearUpcomingBallTimeout();
@@ -121,10 +180,17 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
       return;
     }
 
+    applyAutoDaubsForDrawnBalls();
+
     if (deckRef.current.length > 0) {
       scheduleUpcomingBallReveal();
     }
-  }, [clearDrawTimer, clearUpcomingBallTimeout, scheduleUpcomingBallReveal]);
+  }, [
+    applyAutoDaubsForDrawnBalls,
+    clearDrawTimer,
+    clearUpcomingBallTimeout,
+    scheduleUpcomingBallReveal,
+  ]);
 
   const scheduleNextBallDraw = useCallback((delayMs = BALL_DRAW_INTERVAL_MS) => {
     clearDrawTimer();
@@ -213,6 +279,10 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
       pauseGame();
     }
   }, [pauseGame, resumeGame]);
+
+  const toggleAutoMode = useCallback(() => {
+    setIsAutoMode(prev => !prev);
+  }, []);
 
   const daubSpace = useCallback((cardIndex: number, row: number, col: number) => {
     const key = `${cardIndex}-${row}-${col}`;
@@ -326,6 +396,8 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     setCurrentBall(null);
     setUpcomingBall(null);
     setUserDaubs(new Set());
+    setIsAutoMode(false);
+    isAutoModeRef.current = false;
     setGameState('lobby');
   }, [clearDrawTimer, clearUpcomingBallTimeout, userCardCount]);
 
@@ -346,10 +418,13 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     userDaubs,
     gameState,
     isPaused,
+    isAutoMode,
+    cardOrder,
     startGame,
     pauseGame,
     resumeGame,
     togglePause,
+    toggleAutoMode,
     daubSpace,
     autoDaubColumn,
     callBingo,
