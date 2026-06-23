@@ -215,8 +215,14 @@ const roundConfigBuilders: Record<RoundType, () => RoundConfig> = {
 export const getRoundConfig = (roundType: RoundType): RoundConfig =>
   roundConfigBuilders[roundType]();
 
-export const getRoundsForGame = (roundCount: number): RoundConfig[] =>
-  ROUND_SEQUENCE.slice(0, roundCount).map(getRoundConfig);
+export const getRoundsForGame = (selectedIndices: number[]): RoundConfig[] =>
+  selectedIndices
+    .slice()
+    .sort((a, b) => a - b)
+    .map(index => getRoundConfig(ROUND_SEQUENCE[index]));
+
+/** All round slots selected (games 1–6). */
+export const DEFAULT_ROUND_SELECTION = ROUND_SEQUENCE.map((_, index) => index);
 
 const mergePatterns = (patterns: WinPattern[], id: string, label: string): WinPattern => {
   const cellMap = new Map<string, CellCoord>();

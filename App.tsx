@@ -16,13 +16,36 @@ import Announcer from './src/components/Announcer';
 import CalledBallsBoard from './src/components/CalledBallsBoard';
 import GameSettingsModal from './src/components/GameSettingsModal';
 import WinnerOverlay from './src/components/WinnerOverlay';
-import { MAX_ROUNDS, buildPreviewPatterns } from './src/utils/winPatterns';
+import { ROUND_SEQUENCE, buildPreviewPatterns, getRoundConfig } from './src/utils/winPatterns';
 
 export default function App() {
   const [selectedCardCount, setSelectedCardCount] = useState<number>(1);
-  const [selectedRoundCount, setSelectedRoundCount] = useState<number>(6);
+  const [selectedRounds, setSelectedRounds] = useState<boolean[]>(() =>
+    ROUND_SEQUENCE.map(() => true),
+  );
   const [showCalledBallsBoard, setShowCalledBallsBoard] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+
+  const selectedRoundIndices = useMemo(
+    () =>
+      selectedRounds
+        .map((isSelected, index) => (isSelected ? index : -1))
+        .filter(index => index >= 0),
+    [selectedRounds],
+  );
+
+  const toggleRoundSelection = (index: number) => {
+    setSelectedRounds(prev => {
+      const selectedCount = prev.filter(Boolean).length;
+      if (prev[index] && selectedCount <= 1) {
+        return prev;
+      }
+
+      const next = [...prev];
+      next[index] = !next[index];
+      return next;
+    });
+  };
 
   const {
     gameState,
@@ -54,7 +77,7 @@ export default function App() {
     rounds,
   } = useBingoGame({
     userCardCount: selectedCardCount,
-    roundCount: selectedRoundCount,
+    selectedRoundIndices,
   });
 
   const handleOpenSettings = () => {
@@ -128,33 +151,59 @@ export default function App() {
             ))}
           </View>
 
-          <Text style={styles.subtitle}>Rounds</Text>
-          <View style={styles.selectionContainer}>
-            {Array.from({ length: MAX_ROUNDS }, (_, i) => i + 1).map((num) => (
-              <TouchableOpacity
-                key={num}
-                style={[
-                  styles.selectionButton,
-                  styles.roundButton,
-                  selectedRoundCount === num && styles.selectionButtonActive,
-                ]}
-                onPress={() => setSelectedRoundCount(num)}
-              >
-                <Text style={styles.selectionText}>{num}</Text>
-              </TouchableOpacity>
-            ))}
+          <Text style={styles.subtitle}>Round lineup</Text>
+          <Text style={styles.roundLineupHint}>Tap a game to include or exclude it.</Text>
+          <View style={styles.roundLineup}>
+            {ROUND_SEQUENCE.map((roundType, index) => {
+              const round = getRoundConfig(roundType);
+              const isSelected = selectedRounds[index];
+
+              return (
+                <TouchableOpacity
+                  key={roundType}
+                  style={[styles.roundLineupRow, !isSelected && styles.roundLineupRowOff]}
+                  onPress={() => toggleRoundSelection(index)}
+                  activeOpacity={0.7}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isSelected }}
+                  accessibilityLabel={`${round.label}, ${isSelected ? 'included' : 'excluded'}`}
+                >
+                  <View
+                    style={[
+                      styles.roundCheckbox,
+                      isSelected && styles.roundCheckboxSelected,
+                    ]}
+                  >
+                    {isSelected && <Text style={styles.roundCheckboxMark}>✓</Text>}
+                  </View>
+                  <View style={styles.roundLineupText}>
+                    <Text
+                      style={[
+                        styles.roundLineupLabel,
+                        !isSelected && styles.roundLineupLabelOff,
+                      ]}
+                    >
+                      {round.label}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.roundLineupDescription,
+                        !isSelected && styles.roundLineupDescriptionOff,
+                      ]}
+                    >
+                      {round.description}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
-          <View style={styles.roundPreview}>
-            <Text style={styles.roundPreviewTitle}>Round lineup</Text>
-            {rounds.map((round, index) => (
-              <Text key={round.type} style={styles.roundPreviewItem}>
-                {index + 1}. {round.label}
-              </Text>
-            ))}
-          </View>
-
-          <TouchableOpacity style={styles.startButton} onPress={startGame}>
+          <TouchableOpacity
+            style={[styles.startButton, rounds.length === 0 && styles.startButtonDisabled]}
+            onPress={startGame}
+            disabled={rounds.length === 0}
+          >
             <Text style={styles.startButtonText}>Start Game</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -350,11 +399,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  roundButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-  },
   selectionButtonActive: {
     backgroundColor: '#007AFF',
   },
@@ -363,38 +407,87 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
-  roundPreview: {
+  roundLineupHint: {
+    fontSize: 14,
+    color: '#888',
+    marginBottom: 12,
+    alignSelf: 'flex-start',
+    width: '100%',
+    maxWidth: 360,
+  },
+  roundLineup: {
     width: '100%',
     maxWidth: 360,
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 8,
     marginBottom: 28,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  roundPreviewTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#444',
-    marginBottom: 10,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
+  roundLineupRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 12,
   },
-  roundPreviewItem: {
+  roundLineupRowOff: {
+    opacity: 0.55,
+  },
+  roundCheckbox: {
+    width: 26,
+    height: 26,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderColor: '#c5c5c5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+    backgroundColor: '#fff',
+  },
+  roundCheckboxSelected: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  roundCheckboxMark: {
+    color: '#fff',
     fontSize: 15,
-    color: '#555',
+    fontWeight: '800',
+    lineHeight: 17,
+  },
+  roundLineupText: {
+    flex: 1,
+  },
+  roundLineupLabel: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#222',
     marginBottom: 4,
-    lineHeight: 22,
+  },
+  roundLineupLabelOff: {
+    color: '#666',
+  },
+  roundLineupDescription: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  roundLineupDescriptionOff: {
+    color: '#999',
   },
   startButton: {
     backgroundColor: '#34C759',
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 12,
+  },
+  startButtonDisabled: {
+    backgroundColor: '#a8ddb4',
   },
   startButtonText: {
     color: '#fff',

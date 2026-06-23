@@ -32,10 +32,10 @@ export type WinResult = WinningCardResult & { isNpc: boolean };
 
 interface UseBingoGameParams {
   userCardCount: number;
-  roundCount: number;
+  selectedRoundIndices: number[];
 }
 
-const useBingoGame = ({ userCardCount, roundCount }: UseBingoGameParams) => {
+const useBingoGame = ({ userCardCount, selectedRoundIndices }: UseBingoGameParams) => {
   const [userCards, setUserCards] = useState<BingoCard[]>([]);
   const [npcCards, setNpcCards] = useState<BingoCard[]>([]);
   const npcCardsRef = useRef<BingoCard[]>([]);
@@ -63,10 +63,13 @@ const useBingoGame = ({ userCardCount, roundCount }: UseBingoGameParams) => {
   const isAutoModeRef = useRef(false);
   const gameSpeedRef = useRef<GameSpeed>(1);
   const gameStateRef = useRef<GameState>('lobby');
-  const roundCountRef = useRef(roundCount);
+  const roundCountRef = useRef(selectedRoundIndices.length);
   const currentRoundIndexRef = useRef(0);
 
-  const rounds = useMemo(() => getRoundsForGame(roundCount), [roundCount]);
+  const rounds = useMemo(
+    () => getRoundsForGame(selectedRoundIndices),
+    [selectedRoundIndices],
+  );
   const currentRound = rounds[currentRoundIndex] ?? rounds[0];
   const currentRoundRef = useRef<RoundConfig>(currentRound);
 
@@ -137,8 +140,8 @@ const useBingoGame = ({ userCardCount, roundCount }: UseBingoGameParams) => {
   }, [currentRoundIndex]);
 
   useEffect(() => {
-    roundCountRef.current = roundCount;
-  }, [roundCount]);
+    roundCountRef.current = rounds.length;
+  }, [rounds.length]);
 
   useEffect(() => {
     currentRoundRef.current = currentRound;
@@ -152,7 +155,7 @@ const useBingoGame = ({ userCardCount, roundCount }: UseBingoGameParams) => {
     setIsAutoMode(false);
     isAutoModeRef.current = false;
     setGameState('lobby');
-  }, [generateFreshCards, resetRoundBoard, userCardCount, roundCount]);
+  }, [generateFreshCards, resetRoundBoard, userCardCount, selectedRoundIndices]);
 
   useEffect(() => {
     npcCardsRef.current = npcCards;
@@ -551,7 +554,7 @@ const useBingoGame = ({ userCardCount, roundCount }: UseBingoGameParams) => {
     gameState,
     currentRound,
     currentRoundNumber: currentRoundIndex + 1,
-    totalRounds: roundCount,
+    totalRounds: rounds.length,
     rounds,
     isPaused,
     isAutoMode,
