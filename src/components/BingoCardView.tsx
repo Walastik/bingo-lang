@@ -53,6 +53,14 @@ const BingoCardView: React.FC<BingoCardViewProps> = ({
   }, [previewKey]);
 
   useEffect(() => {
+    if (winPatterns.length === 0) {
+      return;
+    }
+
+    setActivePatternIndex(prev => prev % winPatterns.length);
+  }, [previewKey, winPatterns.length]);
+
+  useEffect(() => {
     if (!isPreviewEnabled || winPatterns.length === 0) {
       return;
     }
@@ -68,15 +76,19 @@ const BingoCardView: React.FC<BingoCardViewProps> = ({
     };
   }, [isPreviewEnabled, previewKey, winPatterns.length]);
 
+  const safePatternIndex =
+    winPatterns.length === 0 ? 0 : activePatternIndex % winPatterns.length;
+  const activePattern = winPatterns[safePatternIndex];
+
   const activePreviewCells = useMemo(() => {
-    if (!isPreviewEnabled || winPatterns.length === 0) {
+    if (!isPreviewEnabled || !activePattern) {
       return new Set<string>();
     }
 
     return new Set(
-      winPatterns[activePatternIndex].cells.map(({ row, col }) => `${row}-${col}`)
+      activePattern.cells.map(({ row, col }) => `${row}-${col}`),
     );
-  }, [isPreviewEnabled, activePatternIndex, winPatterns]);
+  }, [isPreviewEnabled, activePattern]);
 
   const togglePreview = () => {
     setIsPreviewEnabled(prev => {
@@ -101,8 +113,8 @@ const BingoCardView: React.FC<BingoCardViewProps> = ({
           </Text>
         </TouchableOpacity>
         <Text style={styles.patternLabel}>
-          {isPreviewEnabled && winPatterns.length > 0
-            ? winPatterns[activePatternIndex].label
+          {isPreviewEnabled && activePattern
+            ? activePattern.label
             : 'Win preview off'}
         </Text>
       </View>
