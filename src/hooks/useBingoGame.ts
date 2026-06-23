@@ -4,7 +4,9 @@ import {
   generateCard,
   generateDeck,
   checkWin,
+  findWinningCard,
   sortCardIndicesByProximity,
+  WinningCardResult,
 } from '../utils/bingoUtils';
 import { getRoundsForGame, RoundConfig } from '../utils/winPatterns';
 
@@ -26,6 +28,8 @@ const getBallDrawIntervalMs = (speed: GameSpeed) => BALL_DRAW_INTERVAL_MS / spee
 const getUpcomingBallRevealDelayMs = (speed: GameSpeed) =>
   getBallDrawIntervalMs(speed) * UPCOMING_BALL_REVEAL_RATIO;
 
+export type WinResult = WinningCardResult & { isNpc: boolean };
+
 interface UseBingoGameParams {
   userCardCount: number;
   roundCount: number;
@@ -44,6 +48,7 @@ const useBingoGame = ({ userCardCount, roundCount }: UseBingoGameParams) => {
   const [isPaused, setIsPaused] = useState(false);
   const [isAutoMode, setIsAutoMode] = useState(false);
   const [gameSpeed, setGameSpeedState] = useState<GameSpeed>(1);
+  const [winResult, setWinResult] = useState<WinResult | null>(null);
 
   const deckRef = useRef<number[]>([]);
   const userCardsRef = useRef<BingoCard[]>([]);
@@ -190,6 +195,43 @@ const useBingoGame = ({ userCardCount, roundCount }: UseBingoGameParams) => {
     }
   }, [isAutoMode, applyAutoDaubsForDrawnBalls]);
 
+  const getUserDaubsForCard = useCallback(
+    (cardIndex: number) => {
+      const cardDaubs = new Set<string>();
+      userDaubs.forEach(key => {
+        if (key.startsWith(`${cardIndex}-`)) {
+          cardDaubs.add(key.slice(`${cardIndex}-`.length));
+        }
+      });
+      return cardDaubs;
+    },
+    [userDaubs],
+  );
+
+  const recordUserWin = useCallback(() => {
+    const roundConfig = currentRoundRef.current;
+    const result = findWinningCard(
+      userCardsRef.current,
+      drawnBallsSetRef.current,
+      true,
+      cardIndex => getUserDaubsForCard(cardIndex),
+      roundConfig,
+    );
+    setWinResult(result ? { ...result, isNpc: false } : null);
+  }, [getUserDaubsForCard]);
+
+  const recordNpcWin = useCallback(() => {
+    const roundConfig = currentRoundRef.current;
+    const result = findWinningCard(
+      npcCardsRef.current,
+      drawnBallsSetRef.current,
+      false,
+      () => undefined,
+      roundConfig,
+    );
+    setWinResult(result ? { ...result, isNpc: true } : null);
+  }, []);
+
   const cardOrder = useMemo(
     () =>
       sortCardIndicesByProximity(
@@ -223,6 +265,7 @@ const useBingoGame = ({ userCardCount, roundCount }: UseBingoGameParams) => {
       clearUpcomingBallTimeout();
       isPausedRef.current = false;
       setIsPaused(false);
+      recordNpcWin();
       setGameState('npcWon');
       setUpcomingBall(null);
       return;
@@ -237,6 +280,7 @@ const useBingoGame = ({ userCardCount, roundCount }: UseBingoGameParams) => {
     applyAutoDaubsForDrawnBalls,
     clearDrawTimer,
     clearUpcomingBallTimeout,
+    recordNpcWin,
     scheduleUpcomingBallReveal,
   ]);
 
@@ -418,15 +462,18 @@ const useBingoGame = ({ userCardCount, roundCount }: UseBingoGameParams) => {
     setUpcomingBall(null);
 
     if (hasWon) {
+      recordUserWin();
       const isFinalRound = currentRoundIndexRef.current >= roundCountRef.current - 1;
       setGameState(isFinalRound ? 'gameWon' : 'roundWon');
     } else {
+      setWinResult(null);
       setGameState('invalidBingo');
     }
-  }, [clearDrawTimer, clearUpcomingBallTimeout, userCards, userDaubs]);
+  }, [clearDrawTimer, clearUpcomingBallTimeout, recordUserWin, userCards, userDaubs]);
 
   const continueGame = useCallback(() => {
     if (gameState === 'invalidBingo') {
+      setWinResult(null);
       isPausedRef.current = false;
       setIsPaused(false);
       setGameState('playing');
@@ -448,6 +495,7 @@ const useBingoGame = ({ userCardCount, roundCount }: UseBingoGameParams) => {
     setIsPaused(false);
     remainingDrawMsRef.current = null;
     remainingUpcomingRevealMsRef.current = null;
+    setWinResult(null);
 
     const nextRoundIndex = currentRoundIndexRef.current + 1;
     setCurrentRoundIndex(nextRoundIndex);
@@ -482,6 +530,7 @@ const useBingoGame = ({ userCardCount, roundCount }: UseBingoGameParams) => {
     setIsPaused(false);
     remainingDrawMsRef.current = null;
     remainingUpcomingRevealMsRef.current = null;
+    setWinResult(null);
 
     setCurrentRoundIndex(0);
     currentRoundIndexRef.current = 0;
@@ -508,6 +557,7 @@ const useBingoGame = ({ userCardCount, roundCount }: UseBingoGameParams) => {
     isAutoMode,
     gameSpeed,
     cardOrder,
+    winResult,
     startGame,
     pauseGame,
     resumeGame,

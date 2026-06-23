@@ -39,6 +39,16 @@ const GameSettingsModal = ({
     >
       <View style={styles.overlay}>
         <View style={styles.content}>
+          <Pressable
+            style={styles.closeIconButton}
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close menu"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.closeIcon}>✕</Text>
+          </Pressable>
+
           <Text style={styles.title}>Game Settings</Text>
 
           <Text style={styles.sectionLabel}>Speed</Text>
@@ -73,15 +83,6 @@ const GameSettingsModal = ({
           >
             <Text style={styles.quitButtonText}>Quit Game</Text>
           </Pressable>
-
-          <Pressable
-            style={styles.closeButton}
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel="Close menu"
-          >
-            <Text style={styles.closeButtonText}>Close Menu</Text>
-          </Pressable>
         </View>
       </View>
     </Modal>
@@ -102,6 +103,25 @@ const styles = StyleSheet.create({
     padding: 24,
     width: '100%',
     maxWidth: 360,
+    position: 'relative',
+  },
+  closeIconButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  closeIcon: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#555',
+    lineHeight: 18,
   },
   title: {
     fontSize: 22,
@@ -109,6 +129,7 @@ const styles = StyleSheet.create({
     color: '#222',
     marginBottom: 20,
     textAlign: 'center',
+    paddingHorizontal: 28,
   },
   sectionLabel: {
     fontSize: 13,
@@ -148,20 +169,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 10,
   },
   quitButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  closeButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  closeButtonText: {
     color: '#fff',
     fontSize: 17,
     fontWeight: '700',

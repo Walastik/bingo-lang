@@ -15,6 +15,7 @@ import BingoCardCarousel from './src/components/BingoCardCarousel';
 import Announcer from './src/components/Announcer';
 import CalledBallsBoard from './src/components/CalledBallsBoard';
 import GameSettingsModal from './src/components/GameSettingsModal';
+import WinnerOverlay from './src/components/WinnerOverlay';
 import { MAX_ROUNDS, buildPreviewPatterns } from './src/utils/winPatterns';
 
 export default function App() {
@@ -46,6 +47,7 @@ export default function App() {
     gameSpeed,
     setGameSpeed,
     cardOrder,
+    winResult,
     currentRound,
     currentRoundNumber,
     totalRounds,
@@ -245,41 +247,19 @@ export default function App() {
       </View>
 
       {showOverlay && (
-        <View style={styles.overlay}>
-          <View style={styles.overlayContent}>
-            <Text style={styles.overlayTitle}>
-              {gameState === 'roundWon' && `🎉 Round ${currentRoundNumber} Complete! 🎉`}
-              {gameState === 'gameWon' && '🏆 YOU WIN THE GAME! 🏆'}
-              {gameState === 'npcWon' && '😢 NPC Won!'}
-              {gameState === 'invalidBingo' && '❌ Invalid Bingo!'}
-            </Text>
-            <Text style={styles.overlayMessage}>
-              {gameState === 'roundWon' &&
-                `You won ${currentRound.label}. ${totalRounds - currentRoundNumber} round${totalRounds - currentRoundNumber === 1 ? '' : 's'} remaining.`}
-              {gameState === 'gameWon' &&
-                `You completed all ${totalRounds} rounds. Great job!`}
-              {gameState === 'npcWon' && hasMoreRounds &&
-                `An NPC won round ${currentRoundNumber} (${currentRound.label}). Try again in the next round!`}
-              {gameState === 'npcWon' && !hasMoreRounds &&
-                `An NPC won the final round (${currentRound.label}). Better luck next time!`}
-              {gameState === 'invalidBingo' &&
-                `You don't have a valid ${currentRound.label} yet. Review your daubs.`}
-            </Text>
-            {gameState === 'invalidBingo' ? (
-              <TouchableOpacity style={styles.continueButton} onPress={continueGame}>
-                <Text style={styles.continueButtonText}>Continue Game</Text>
-              </TouchableOpacity>
-            ) : (gameState === 'roundWon' || (gameState === 'npcWon' && hasMoreRounds)) ? (
-              <TouchableOpacity style={styles.playAgainButton} onPress={startNextRound}>
-                <Text style={styles.playAgainButtonText}>Next Round</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity style={styles.playAgainButton} onPress={resetGame}>
-                <Text style={styles.playAgainButtonText}>Play Again</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
+        <WinnerOverlay
+          gameState={gameState}
+          winResult={winResult}
+          currentRoundNumber={currentRoundNumber}
+          totalRounds={totalRounds}
+          currentRoundLabel={currentRound.label}
+          hasMoreRounds={hasMoreRounds}
+          userDaubs={userDaubs}
+          drawnBalls={drawnBalls}
+          onContinue={continueGame}
+          onNextRound={startNextRound}
+          onPlayAgain={resetGame}
+        />
       )}
     </SafeAreaView>
   );
@@ -451,58 +431,5 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '900',
     letterSpacing: 2,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.85)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 100,
-  },
-  overlayContent: {
-    backgroundColor: '#fff',
-    padding: 30,
-    borderRadius: 20,
-    alignItems: 'center',
-    width: '80%',
-    maxWidth: 400,
-  },
-  overlayTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  overlayMessage: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 25,
-    textAlign: 'center',
-  },
-  playAgainButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 12,
-    minWidth: 150,
-  },
-  playAgainButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  continueButton: {
-    backgroundColor: '#FF9500',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 12,
-    minWidth: 150,
-    marginBottom: 15,
-  },
-  continueButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
   },
 });

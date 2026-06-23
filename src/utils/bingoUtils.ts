@@ -1,4 +1,4 @@
-import { RoundConfig, getRoundConfig } from './winPatterns';
+import { CellCoord, RoundConfig, WinPattern, getRoundConfig } from './winPatterns';
 
 // src/types.ts
 
@@ -176,6 +176,71 @@ export function checkWin(
   );
 
   return completedPatterns.length >= roundConfig.minPatternsRequired;
+}
+
+export interface WinningCardResult {
+  card: BingoCard;
+  cardIndex: number;
+  winningCells: CellCoord[];
+}
+
+function mergePatternCells(patterns: WinPattern[]): CellCoord[] {
+  const cellMap = new Map<string, CellCoord>();
+
+  for (const pattern of patterns) {
+    for (const cell of pattern.cells) {
+      cellMap.set(`${cell.row}-${cell.col}`, cell);
+    }
+  }
+
+  return Array.from(cellMap.values());
+}
+
+function getCompletedPatterns(
+  card: BingoCard,
+  drawnBalls: Set<number>,
+  isUser: boolean,
+  userDaubedSpaces: Set<string> | undefined,
+  roundConfig: RoundConfig,
+): WinPattern[] {
+  const isCellMarked = createCellMarkedChecker(card, drawnBalls, isUser, userDaubedSpaces);
+  return roundConfig.patterns.filter(pattern => isPatternComplete(pattern, isCellMarked));
+}
+
+/**
+ * Returns the first winning card and the cells that complete the active round pattern.
+ */
+export function findWinningCard(
+  cards: BingoCard[],
+  drawnBalls: Set<number>,
+  isUser: boolean,
+  getUserDaubsForCard: (cardIndex: number) => Set<string> | undefined,
+  roundConfig: RoundConfig = getRoundConfig('singleLine'),
+): WinningCardResult | null {
+  for (let cardIndex = 0; cardIndex < cards.length; cardIndex++) {
+    const card = cards[cardIndex];
+    const userDaubedSpaces = isUser ? getUserDaubsForCard(cardIndex) : undefined;
+    const completedPatterns = getCompletedPatterns(
+      card,
+      drawnBalls,
+      isUser,
+      userDaubedSpaces,
+      roundConfig,
+    );
+
+    if (completedPatterns.length < roundConfig.minPatternsRequired) {
+      continue;
+    }
+
+    const winningPatternGroup = completedPatterns.slice(0, roundConfig.minPatternsRequired);
+    return {
+      card,
+      cardIndex,
+      winningCells: mergePatternCells(winningPatternGroup),
+    };
+  }
+
+  return null;
 }
 
 function getUncalledBallsNeededForCells(
