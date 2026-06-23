@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { getBallColor } from '../utils/bingoUtils';
-import { ACTIVE_WIN_PATTERNS } from '../utils/winPatterns';
+import { WinPattern } from '../utils/winPatterns';
 
 const GRID_GAP = 4;
 const GRID_COLUMNS = 5;
@@ -19,20 +19,29 @@ interface BingoCardViewProps {
   card: BingoCard;
   cardIndex: number;
   userDaubs: Set<string>;
+  winPatterns: WinPattern[];
+  /** Stable id so preview cycling resets only when the round type changes. */
+  previewKey: string;
   onCellPress: (flatIndex: number) => void;
   onHeaderPress: (col: number) => void;
 }
 
+const PREVIEW_CYCLE_MS = 750;
+
 const BingoCardView: React.FC<BingoCardViewProps> = ({ 
   card, 
   cardIndex, 
-  userDaubs, 
+  userDaubs,
+  winPatterns,
+  previewKey,
   onCellPress,
   onHeaderPress
 }) => {
   const [isPreviewEnabled, setIsPreviewEnabled] = useState(false);
   const [activePatternIndex, setActivePatternIndex] = useState(0);
   const [gridWidth, setGridWidth] = useState(0);
+  const winPatternsRef = useRef(winPatterns);
+  winPatternsRef.current = winPatterns;
 
   const cellSize =
     gridWidth > 0
@@ -40,28 +49,34 @@ const BingoCardView: React.FC<BingoCardViewProps> = ({
       : 0;
 
   useEffect(() => {
-    if (!isPreviewEnabled) {
+    setActivePatternIndex(0);
+  }, [previewKey]);
+
+  useEffect(() => {
+    if (!isPreviewEnabled || winPatterns.length === 0) {
       return;
     }
 
     const interval = setInterval(() => {
-      setActivePatternIndex(prev => (prev + 1) % ACTIVE_WIN_PATTERNS.length);
-    }, 750);
+      setActivePatternIndex(
+        prev => (prev + 1) % winPatternsRef.current.length,
+      );
+    }, PREVIEW_CYCLE_MS);
 
     return () => {
       clearInterval(interval);
     };
-  }, [isPreviewEnabled]);
+  }, [isPreviewEnabled, previewKey, winPatterns.length]);
 
   const activePreviewCells = useMemo(() => {
-    if (!isPreviewEnabled) {
+    if (!isPreviewEnabled || winPatterns.length === 0) {
       return new Set<string>();
     }
 
     return new Set(
-      ACTIVE_WIN_PATTERNS[activePatternIndex].cells.map(({ row, col }) => `${row}-${col}`)
+      winPatterns[activePatternIndex].cells.map(({ row, col }) => `${row}-${col}`)
     );
-  }, [isPreviewEnabled, activePatternIndex]);
+  }, [isPreviewEnabled, activePatternIndex, winPatterns]);
 
   const togglePreview = () => {
     setIsPreviewEnabled(prev => {
@@ -86,7 +101,9 @@ const BingoCardView: React.FC<BingoCardViewProps> = ({
           </Text>
         </TouchableOpacity>
         <Text style={styles.patternLabel}>
-          {isPreviewEnabled ? ACTIVE_WIN_PATTERNS[activePatternIndex].label : 'Win preview off'}
+          {isPreviewEnabled && winPatterns.length > 0
+            ? winPatterns[activePatternIndex].label
+            : 'Win preview off'}
         </Text>
       </View>
 

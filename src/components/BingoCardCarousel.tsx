@@ -10,6 +10,7 @@ import {
   ListRenderItem,
 } from 'react-native';
 import { BingoCard } from '../utils/bingoUtils';
+import { WinPattern } from '../utils/winPatterns';
 import BingoCardView from './BingoCardView';
 
 interface BingoCardCarouselProps {
@@ -17,6 +18,8 @@ interface BingoCardCarouselProps {
   /** Real card indices aligned with `cards` (for daub keys). Defaults to 0..n-1. */
   cardIndices?: number[];
   userDaubs: Set<string>;
+  winPatterns: WinPattern[];
+  previewKey: string;
   onCellPress: (displayIndex: number, flatIndex: number) => void;
   onHeaderPress: (displayIndex: number, col: number) => void;
 }
@@ -25,6 +28,8 @@ const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
   cards,
   cardIndices,
   userDaubs,
+  winPatterns,
+  previewKey,
   onCellPress,
   onHeaderPress,
 }) => {
@@ -77,12 +82,14 @@ const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
           card={item}
           cardIndex={resolvedCardIndices[index]}
           userDaubs={userDaubs}
+          winPatterns={winPatterns}
+          previewKey={previewKey}
           onCellPress={(flatIndex) => onCellPress(index, flatIndex)}
           onHeaderPress={(col) => onHeaderPress(index, col)}
         />
       </View>
     ),
-    [onCellPress, onHeaderPress, pageWidth, resolvedCardIndices, userDaubs],
+    [onCellPress, onHeaderPress, pageWidth, previewKey, resolvedCardIndices, userDaubs, winPatterns],
   );
 
   if (cardCount === 0) {
@@ -96,6 +103,8 @@ const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
           card={cards[0]}
           cardIndex={resolvedCardIndices[0]}
           userDaubs={userDaubs}
+          winPatterns={winPatterns}
+          previewKey={previewKey}
           onCellPress={(flatIndex) => onCellPress(0, flatIndex)}
           onHeaderPress={(col) => onHeaderPress(0, col)}
         />

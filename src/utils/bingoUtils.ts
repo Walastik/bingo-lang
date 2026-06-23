@@ -1,4 +1,4 @@
-import { ACTIVE_WIN_PATTERNS } from './winPatterns';
+import { RoundConfig, getRoundConfig } from './winPatterns';
 
 // src/types.ts
 
@@ -130,46 +130,98 @@ export function getBallColor(value?: number | string): string {
   }
 }
 
-/**
- * Check if a Bingo card has won based on drawn balls or user daubed spaces
- * @param card The Bingo card to check
- * @param drawnBalls Set of numbers drawn (for NPCs)
- * @param isUser If true, uses userDaubedSpaces instead of drawnBalls
- * @param userDaubedSpaces Set of space identifiers in format "row-col" (e.g., "0-2" for row 0, col 2)
- * @returns true if the card has a winning line, false otherwise
- */
-export function checkWin(
+function createCellMarkedChecker(
   card: BingoCard,
   drawnBalls: Set<number>,
   isUser: boolean,
-  userDaubedSpaces?: Set<string>
-): boolean {
-  const isCellMarked = (row: number, col: number): boolean => {
+  userDaubedSpaces?: Set<string>,
+) {
+  return (row: number, col: number): boolean => {
     if (row === 2 && col === 2) return true;
 
     const index = row * 5 + col;
     const cell = card.grid[index];
 
     if (isUser && userDaubedSpaces) {
-      // User mode: must have called number AND daubed it
       if (typeof cell === 'number' && drawnBalls.has(cell)) {
         return userDaubedSpaces.has(`${row}-${col}`);
       }
       return false;
-    } else {
-      // NPC mode: only need the number to be drawn
-      return typeof cell === 'number' && drawnBalls.has(cell);
     }
-  };
 
-  return ACTIVE_WIN_PATTERNS.some(pattern =>
-    pattern.cells.every(({ row, col }) => isCellMarked(row, col))
-  );
+    return typeof cell === 'number' && drawnBalls.has(cell);
+  };
+}
+
+function isPatternComplete(
+  pattern: RoundConfig['patterns'][number],
+  isCellMarked: (row: number, col: number) => boolean,
+): boolean {
+  return pattern.cells.every(({ row, col }) => isCellMarked(row, col));
 }
 
 /**
- * Minimum number of uncalled balls still needed to complete any winning line.
- * Called-but-not-daubed cells count as 0 additional balls (manual) or as complete (auto).
+ * Check if a Bingo card has won based on drawn balls or user daubed spaces.
+ */
+export function checkWin(
+  card: BingoCard,
+  drawnBalls: Set<number>,
+  isUser: boolean,
+  userDaubedSpaces?: Set<string>,
+  roundConfig: RoundConfig = getRoundConfig('singleLine'),
+): boolean {
+  const isCellMarked = createCellMarkedChecker(card, drawnBalls, isUser, userDaubedSpaces);
+  const completedPatterns = roundConfig.patterns.filter(pattern =>
+    isPatternComplete(pattern, isCellMarked),
+  );
+
+  return completedPatterns.length >= roundConfig.minPatternsRequired;
+}
+
+function getUncalledBallsNeededForCells(
+  card: BingoCard,
+  drawnBalls: Set<number>,
+  cells: Array<{ row: number; col: number }>,
+  isCellMarked: (row: number, col: number) => boolean,
+): number {
+  let needed = 0;
+
+  for (const { row, col } of cells) {
+    if (isCellMarked(row, col)) {
+      continue;
+    }
+
+    const index = row * 5 + col;
+    const cell = card.grid[index];
+
+    if (typeof cell === 'number' && !drawnBalls.has(cell)) {
+      needed += 1;
+    }
+  }
+
+  return needed;
+}
+
+function getPatternGroups(roundConfig: RoundConfig): RoundConfig['patterns'][] {
+  const { patterns, minPatternsRequired } = roundConfig;
+
+  if (minPatternsRequired <= 1) {
+    return patterns.map(pattern => [pattern]);
+  }
+
+  const groups: RoundConfig['patterns'][] = [];
+
+  for (let i = 0; i < patterns.length; i++) {
+    for (let j = i + 1; j < patterns.length; j++) {
+      groups.push([patterns[i], patterns[j]]);
+    }
+  }
+
+  return groups;
+}
+
+/**
+ * Minimum number of uncalled balls still needed to complete the active round pattern.
  */
 export function getBallsNeededForBingo(
   card: BingoCard,
@@ -177,6 +229,7 @@ export function getBallsNeededForBingo(
   cardIndex: number,
   userDaubs: Set<string>,
   isAutoMode: boolean,
+  roundConfig: RoundConfig = getRoundConfig('singleLine'),
 ): number {
   const isCellMarked = (row: number, col: number): boolean => {
     if (row === 2 && col === 2) {
@@ -203,21 +256,21 @@ export function getBallsNeededForBingo(
 
   let minNeeded = 25;
 
-  for (const pattern of ACTIVE_WIN_PATTERNS) {
-    let needed = 0;
+  for (const patternGroup of getPatternGroups(roundConfig)) {
+    const uniqueCells = new Map<string, { row: number; col: number }>();
 
-    for (const { row, col } of pattern.cells) {
-      if (isCellMarked(row, col)) {
-        continue;
-      }
-
-      const index = row * 5 + col;
-      const cell = card.grid[index];
-
-      if (typeof cell === 'number' && !drawnBalls.has(cell)) {
-        needed += 1;
+    for (const pattern of patternGroup) {
+      for (const cell of pattern.cells) {
+        uniqueCells.set(`${cell.row}-${cell.col}`, cell);
       }
     }
+
+    const needed = getUncalledBallsNeededForCells(
+      card,
+      drawnBalls,
+      Array.from(uniqueCells.values()),
+      isCellMarked,
+    );
 
     minNeeded = Math.min(minNeeded, needed);
   }
@@ -233,6 +286,7 @@ export function sortCardIndicesByProximity(
   drawnBalls: Set<number>,
   userDaubs: Set<string>,
   isAutoMode: boolean,
+  roundConfig: RoundConfig = getRoundConfig('singleLine'),
 ): number[] {
   return cards
     .map((_, index) => index)
@@ -243,6 +297,7 @@ export function sortCardIndicesByProximity(
         a,
         userDaubs,
         isAutoMode,
+        roundConfig,
       );
       const neededB = getBallsNeededForBingo(
         cards[b],
@@ -250,6 +305,7 @@ export function sortCardIndicesByProximity(
         b,
         userDaubs,
         isAutoMode,
+        roundConfig,
       );
 
       if (neededA !== neededB) {

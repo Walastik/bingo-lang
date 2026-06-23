@@ -6,8 +6,15 @@ import {
   checkWin,
   sortCardIndicesByProximity,
 } from '../utils/bingoUtils';
+import { getRoundsForGame, RoundConfig } from '../utils/winPatterns';
 
-type GameState = 'lobby' | 'playing' | 'userWon' | 'npcWon' | 'invalidBingo';
+type GameState =
+  | 'lobby'
+  | 'playing'
+  | 'roundWon'
+  | 'gameWon'
+  | 'npcWon'
+  | 'invalidBingo';
 
 export const GAME_SPEED_OPTIONS = [0.25, 0.5, 1, 2, 3] as const;
 export type GameSpeed = (typeof GAME_SPEED_OPTIONS)[number];
@@ -21,9 +28,10 @@ const getUpcomingBallRevealDelayMs = (speed: GameSpeed) =>
 
 interface UseBingoGameParams {
   userCardCount: number;
+  roundCount: number;
 }
 
-const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
+const useBingoGame = ({ userCardCount, roundCount }: UseBingoGameParams) => {
   const [userCards, setUserCards] = useState<BingoCard[]>([]);
   const [npcCards, setNpcCards] = useState<BingoCard[]>([]);
   const npcCardsRef = useRef<BingoCard[]>([]);
@@ -32,10 +40,11 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
   const [upcomingBall, setUpcomingBall] = useState<number | null>(null);
   const [userDaubs, setUserDaubs] = useState<Set<string>>(new Set());
   const [gameState, setGameState] = useState<GameState>('lobby');
+  const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isAutoMode, setIsAutoMode] = useState(false);
   const [gameSpeed, setGameSpeedState] = useState<GameSpeed>(1);
-  
+
   const deckRef = useRef<number[]>([]);
   const userCardsRef = useRef<BingoCard[]>([]);
   const drawnBallsSetRef = useRef<Set<number>>(new Set());
@@ -49,6 +58,12 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
   const isAutoModeRef = useRef(false);
   const gameSpeedRef = useRef<GameSpeed>(1);
   const gameStateRef = useRef<GameState>('lobby');
+  const roundCountRef = useRef(roundCount);
+  const currentRoundIndexRef = useRef(0);
+
+  const rounds = useMemo(() => getRoundsForGame(roundCount), [roundCount]);
+  const currentRound = rounds[currentRoundIndex] ?? rounds[0];
+  const currentRoundRef = useRef<RoundConfig>(currentRound);
 
   const clearDrawTimer = useCallback(() => {
     if (drawTimerRef.current) {
@@ -85,33 +100,54 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     }, delay);
   }, [clearUpcomingBallTimeout]);
 
-  useEffect(() => {
-    gameStateRef.current = gameState;
-  }, [gameState]);
-
-  useEffect(() => {
+  const generateFreshCards = useCallback(() => {
     const newNPCCards: BingoCard[] = [];
     for (let i = 0; i < 10; i++) {
       newNPCCards.push(generateCard());
     }
     setNpcCards(newNPCCards);
-    
+
     const newUserCards: BingoCard[] = [];
     for (let i = 0; i < userCardCount; i++) {
       newUserCards.push(generateCard());
     }
     setUserCards(newUserCards);
-    
+  }, [userCardCount]);
+
+  const resetRoundBoard = useCallback(() => {
     deckRef.current = generateDeck();
     drawnBallsSetRef.current = new Set();
     setDrawnBalls([]);
     setCurrentBall(null);
     setUpcomingBall(null);
     setUserDaubs(new Set());
+  }, []);
+
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
+
+  useEffect(() => {
+    currentRoundIndexRef.current = currentRoundIndex;
+  }, [currentRoundIndex]);
+
+  useEffect(() => {
+    roundCountRef.current = roundCount;
+  }, [roundCount]);
+
+  useEffect(() => {
+    currentRoundRef.current = currentRound;
+  }, [currentRound]);
+
+  useEffect(() => {
+    generateFreshCards();
+    resetRoundBoard();
+    setCurrentRoundIndex(0);
+    currentRoundIndexRef.current = 0;
     setIsAutoMode(false);
     isAutoModeRef.current = false;
     setGameState('lobby');
-  }, [userCardCount]);
+  }, [generateFreshCards, resetRoundBoard, userCardCount, roundCount]);
 
   useEffect(() => {
     npcCardsRef.current = npcCards;
@@ -161,8 +197,9 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
         new Set(drawnBalls),
         userDaubs,
         isAutoMode,
+        currentRound,
       ),
-    [userCards, drawnBalls, userDaubs, isAutoMode],
+    [userCards, drawnBalls, userDaubs, isAutoMode, currentRound],
   );
 
   const drawNextBall = useCallback(() => {
@@ -170,16 +207,17 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     setUpcomingBall(null);
 
     if (deckRef.current.length === 0) return;
-    
+
     const nextBall = deckRef.current.pop()!;
     drawnBallsSetRef.current.add(nextBall);
     setDrawnBalls(prev => [...prev, nextBall]);
     setCurrentBall(nextBall);
-    
+
+    const roundConfig = currentRoundRef.current;
     const hasNPCWon = npcCardsRef.current.some(card =>
-      checkWin(card, drawnBallsSetRef.current, false)
+      checkWin(card, drawnBallsSetRef.current, false, undefined, roundConfig),
     );
-    
+
     if (hasNPCWon) {
       clearDrawTimer();
       clearUpcomingBallTimeout();
@@ -227,14 +265,14 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
       }
     }, delay);
   }, [clearDrawTimer, drawNextBall]);
-  
+
   const startGame = useCallback(() => {
     if (gameState !== 'lobby') return;
-    
+
     isPausedRef.current = false;
     setIsPaused(false);
     setGameState('playing');
-    
+
     drawNextBall();
     scheduleNextBallDraw();
   }, [gameState, drawNextBall, scheduleNextBallDraw]);
@@ -255,7 +293,7 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     if (upcomingBallTimeoutRef.current && upcomingRevealAtRef.current !== null) {
       remainingUpcomingRevealMsRef.current = Math.max(
         0,
-        upcomingRevealAtRef.current - Date.now()
+        upcomingRevealAtRef.current - Date.now(),
       );
       clearUpcomingBallTimeout();
     } else {
@@ -356,8 +394,9 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
   }, [userCards]);
 
   const callBingo = useCallback(() => {
+    const roundConfig = currentRoundRef.current;
     let hasWon = false;
-    
+
     for (let i = 0; i < userCards.length; i++) {
       const cardDaubs = new Set<string>();
       userDaubs.forEach(key => {
@@ -366,20 +405,21 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
         }
       });
 
-      if (checkWin(userCards[i], drawnBallsSetRef.current, true, cardDaubs)) {
+      if (checkWin(userCards[i], drawnBallsSetRef.current, true, cardDaubs, roundConfig)) {
         hasWon = true;
         break;
       }
     }
-    
+
     clearDrawTimer();
     clearUpcomingBallTimeout();
     isPausedRef.current = false;
     setIsPaused(false);
     setUpcomingBall(null);
-    
+
     if (hasWon) {
-      setGameState('userWon');
+      const isFinalRound = currentRoundIndexRef.current >= roundCountRef.current - 1;
+      setGameState(isFinalRound ? 'gameWon' : 'roundWon');
     } else {
       setGameState('invalidBingo');
     }
@@ -390,11 +430,43 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
       isPausedRef.current = false;
       setIsPaused(false);
       setGameState('playing');
-      
+
       drawNextBall();
       scheduleNextBallDraw();
     }
   }, [gameState, drawNextBall, scheduleNextBallDraw]);
+
+  const startNextRound = useCallback(() => {
+    const state = gameStateRef.current;
+    if (state !== 'roundWon' && state !== 'npcWon') {
+      return;
+    }
+
+    clearDrawTimer();
+    clearUpcomingBallTimeout();
+    isPausedRef.current = false;
+    setIsPaused(false);
+    remainingDrawMsRef.current = null;
+    remainingUpcomingRevealMsRef.current = null;
+
+    const nextRoundIndex = currentRoundIndexRef.current + 1;
+    setCurrentRoundIndex(nextRoundIndex);
+    currentRoundIndexRef.current = nextRoundIndex;
+
+    generateFreshCards();
+    resetRoundBoard();
+    setGameState('playing');
+
+    drawNextBall();
+    scheduleNextBallDraw();
+  }, [
+    clearDrawTimer,
+    clearUpcomingBallTimeout,
+    generateFreshCards,
+    resetRoundBoard,
+    drawNextBall,
+    scheduleNextBallDraw,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -411,36 +483,14 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     remainingDrawMsRef.current = null;
     remainingUpcomingRevealMsRef.current = null;
 
-    const newNPCCards: BingoCard[] = [];
-    for (let i = 0; i < 10; i++) {
-      newNPCCards.push(generateCard());
-    }
-    setNpcCards(newNPCCards);
-    
-    const newUserCards: BingoCard[] = [];
-    for (let i = 0; i < userCardCount; i++) {
-      newUserCards.push(generateCard());
-    }
-    setUserCards(newUserCards);
-    
-    deckRef.current = generateDeck();
-    drawnBallsSetRef.current = new Set();
-    setDrawnBalls([]);
-    setCurrentBall(null);
-    setUpcomingBall(null);
-    setUserDaubs(new Set());
+    setCurrentRoundIndex(0);
+    currentRoundIndexRef.current = 0;
+    generateFreshCards();
+    resetRoundBoard();
     setIsAutoMode(false);
     isAutoModeRef.current = false;
     setGameState('lobby');
-  }, [clearDrawTimer, clearUpcomingBallTimeout, userCardCount]);
-
-  useEffect(() => {
-    resetGame();
-  }, [resetGame]);
-
-  useEffect(() => {
-    npcCardsRef.current = npcCards;
-  }, [npcCards]);
+  }, [clearDrawTimer, clearUpcomingBallTimeout, generateFreshCards, resetRoundBoard]);
 
   return {
     userCards,
@@ -450,6 +500,10 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     upcomingBall,
     userDaubs,
     gameState,
+    currentRound,
+    currentRoundNumber: currentRoundIndex + 1,
+    totalRounds: roundCount,
+    rounds,
     isPaused,
     isAutoMode,
     gameSpeed,
@@ -464,7 +518,8 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     autoDaubColumn,
     callBingo,
     continueGame,
-    resetGame
+    startNextRound,
+    resetGame,
   };
 };
 
