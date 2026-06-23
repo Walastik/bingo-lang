@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   StyleSheet,
   Text,
   View,
@@ -8,14 +9,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import useBingoGame from './src/hooks/useBingoGame';
+import useBingoGame, { GameSpeed } from './src/hooks/useBingoGame';
 import BingoCardCarousel from './src/components/BingoCardCarousel';
 import Announcer from './src/components/Announcer';
 import CalledBallsBoard from './src/components/CalledBallsBoard';
+import GameSettingsModal from './src/components/GameSettingsModal';
 
 export default function App() {
   const [selectedCardCount, setSelectedCardCount] = useState<number>(1);
   const [showCalledBallsBoard, setShowCalledBallsBoard] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   
   const {
     gameState,
@@ -31,11 +34,47 @@ export default function App() {
     continueGame,
     resetGame,
     isPaused,
+    pauseGame,
+    resumeGame,
     togglePause,
     isAutoMode,
     toggleAutoMode,
+    gameSpeed,
+    setGameSpeed,
     cardOrder,
   } = useBingoGame({ userCardCount: selectedCardCount });
+
+  const handleOpenSettings = () => {
+    pauseGame();
+    setShowSettingsMenu(true);
+  };
+
+  const handleCloseSettings = () => {
+    setShowSettingsMenu(false);
+    resumeGame();
+  };
+
+  const handleQuitGame = () => {
+    Alert.alert(
+      'Are you sure?',
+      'This will end the current game and return to the lobby.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Quit',
+          style: 'destructive',
+          onPress: () => {
+            setShowSettingsMenu(false);
+            resetGame();
+          },
+        },
+      ],
+    );
+  };
+
+  const handleSelectSpeed = (speed: GameSpeed) => {
+    setGameSpeed(speed);
+  };
 
   // --- RENDER: LOBBY ---
   if (gameState === 'lobby') {
@@ -73,6 +112,29 @@ export default function App() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
+
+      {gameState === 'playing' && (
+        <View style={styles.gameHeader}>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={handleOpenSettings}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Open game settings"
+          >
+            <Text style={styles.settingsIcon}>⚙️</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <GameSettingsModal
+        visible={showSettingsMenu}
+        gameSpeed={gameSpeed}
+        onSelectSpeed={handleSelectSpeed}
+        onQuit={handleQuitGame}
+        onClose={handleCloseSettings}
+      />
       
       {/* Use our real Announcer component */}
       <Announcer
@@ -160,6 +222,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  gameHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 12,
+    paddingBottom: 4,
+  },
+  settingsButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  settingsIcon: {
+    fontSize: 24,
+    color: '#333',
+    lineHeight: 28,
   },
   lobbyContent: {
     flex: 1,

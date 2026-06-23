@@ -9,8 +9,15 @@ import {
 
 type GameState = 'lobby' | 'playing' | 'userWon' | 'npcWon' | 'invalidBingo';
 
+export const GAME_SPEED_OPTIONS = [0.25, 0.5, 1, 2, 3] as const;
+export type GameSpeed = (typeof GAME_SPEED_OPTIONS)[number];
+
 const BALL_DRAW_INTERVAL_MS = 5000;
-const UPCOMING_BALL_REVEAL_DELAY_MS = BALL_DRAW_INTERVAL_MS * 0.25;
+const UPCOMING_BALL_REVEAL_RATIO = 0.25;
+
+const getBallDrawIntervalMs = (speed: GameSpeed) => BALL_DRAW_INTERVAL_MS / speed;
+const getUpcomingBallRevealDelayMs = (speed: GameSpeed) =>
+  getBallDrawIntervalMs(speed) * UPCOMING_BALL_REVEAL_RATIO;
 
 interface UseBingoGameParams {
   userCardCount: number;
@@ -27,6 +34,7 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
   const [gameState, setGameState] = useState<GameState>('lobby');
   const [isPaused, setIsPaused] = useState(false);
   const [isAutoMode, setIsAutoMode] = useState(false);
+  const [gameSpeed, setGameSpeedState] = useState<GameSpeed>(1);
   
   const deckRef = useRef<number[]>([]);
   const userCardsRef = useRef<BingoCard[]>([]);
@@ -39,6 +47,7 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
   const remainingUpcomingRevealMsRef = useRef<number | null>(null);
   const isPausedRef = useRef(false);
   const isAutoModeRef = useRef(false);
+  const gameSpeedRef = useRef<GameSpeed>(1);
   const gameStateRef = useRef<GameState>('lobby');
 
   const clearDrawTimer = useCallback(() => {
@@ -57,7 +66,8 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     upcomingRevealAtRef.current = null;
   }, []);
 
-  const scheduleUpcomingBallReveal = useCallback((delayMs = UPCOMING_BALL_REVEAL_DELAY_MS) => {
+  const scheduleUpcomingBallReveal = useCallback((delayMs?: number) => {
+    const delay = delayMs ?? getUpcomingBallRevealDelayMs(gameSpeedRef.current);
     clearUpcomingBallTimeout();
     setUpcomingBall(null);
 
@@ -65,14 +75,14 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
       return;
     }
 
-    upcomingRevealAtRef.current = Date.now() + delayMs;
+    upcomingRevealAtRef.current = Date.now() + delay;
     upcomingBallTimeoutRef.current = window.setTimeout(() => {
       upcomingBallTimeoutRef.current = null;
       upcomingRevealAtRef.current = null;
       if (deckRef.current.length > 0) {
         setUpcomingBall(deckRef.current[deckRef.current.length - 1]);
       }
-    }, delayMs);
+    }, delay);
   }, [clearUpcomingBallTimeout]);
 
   useEffect(() => {
@@ -192,9 +202,10 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     scheduleUpcomingBallReveal,
   ]);
 
-  const scheduleNextBallDraw = useCallback((delayMs = BALL_DRAW_INTERVAL_MS) => {
+  const scheduleNextBallDraw = useCallback((delayMs?: number) => {
+    const delay = delayMs ?? getBallDrawIntervalMs(gameSpeedRef.current);
     clearDrawTimer();
-    nextDrawAtRef.current = Date.now() + delayMs;
+    nextDrawAtRef.current = Date.now() + delay;
 
     drawTimerRef.current = window.setTimeout(() => {
       drawTimerRef.current = null;
@@ -214,7 +225,7 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
       if (gameStateRef.current === 'playing' && deckRef.current.length > 0) {
         scheduleNextBallDraw();
       }
-    }, delayMs);
+    }, delay);
   }, [clearDrawTimer, drawNextBall]);
   
   const startGame = useCallback(() => {
@@ -267,10 +278,32 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
       scheduleUpcomingBallReveal(pendingUpcomingMs);
     }
 
-    const drawDelay = remainingDrawMsRef.current ?? BALL_DRAW_INTERVAL_MS;
+    const drawDelay =
+      remainingDrawMsRef.current ?? getBallDrawIntervalMs(gameSpeedRef.current);
     remainingDrawMsRef.current = null;
     scheduleNextBallDraw(drawDelay);
   }, [scheduleNextBallDraw, scheduleUpcomingBallReveal]);
+
+  const setGameSpeed = useCallback((speed: GameSpeed) => {
+    const oldSpeed = gameSpeedRef.current;
+    if (oldSpeed === speed) {
+      return;
+    }
+
+    gameSpeedRef.current = speed;
+    setGameSpeedState(speed);
+
+    if (isPausedRef.current && gameStateRef.current === 'playing') {
+      if (remainingDrawMsRef.current !== null) {
+        remainingDrawMsRef.current = remainingDrawMsRef.current * (oldSpeed / speed);
+      }
+
+      if (remainingUpcomingRevealMsRef.current !== null) {
+        remainingUpcomingRevealMsRef.current =
+          remainingUpcomingRevealMsRef.current * (oldSpeed / speed);
+      }
+    }
+  }, []);
 
   const togglePause = useCallback(() => {
     if (isPausedRef.current) {
@@ -419,12 +452,14 @@ const useBingoGame = ({ userCardCount }: UseBingoGameParams) => {
     gameState,
     isPaused,
     isAutoMode,
+    gameSpeed,
     cardOrder,
     startGame,
     pauseGame,
     resumeGame,
     togglePause,
     toggleAutoMode,
+    setGameSpeed,
     daubSpace,
     autoDaubColumn,
     callBingo,
