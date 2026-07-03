@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getBallColor } from '../utils/bingoUtils';
+import { useTheme } from '../theme/ThemeContext';
+import { ThemeColors } from '../theme/colors';
 
 const BINGO_LETTERS = ['B', 'I', 'N', 'G', 'O'] as const;
 const COLUMN_STARTS = [1, 16, 31, 46, 61];
@@ -19,7 +21,102 @@ interface CalledBallsBoardProps {
   onClose: () => void;
 }
 
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    subtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    closeButton: {
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      backgroundColor: '#007AFF',
+    },
+    closeButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: 16,
+      paddingBottom: 32,
+    },
+    table: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 10,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      marginBottom: 6,
+    },
+    headerCell: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: 6,
+    },
+    headerLetter: {
+      fontSize: 26,
+      fontWeight: '800',
+    },
+    dataRow: {
+      flexDirection: 'row',
+      marginBottom: 4,
+    },
+    ballCell: {
+      flex: 1,
+      marginHorizontal: 2,
+      aspectRatio: 1,
+      maxHeight: 44,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    ballCellUncalled: {
+      backgroundColor: colors.ballCellUncalled,
+    },
+    ballNumber: {
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    ballNumberCalled: {
+      color: '#fff',
+    },
+    ballNumberUncalled: {
+      color: colors.ballNumberUncalled,
+    },
+  });
+}
+
 const CalledBallsBoard = ({ calledBalls, visible, onClose }: CalledBallsBoardProps) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const calledSet = useMemo(() => new Set(calledBalls), [calledBalls]);
   const calledCount = calledBalls.length;
 
@@ -99,96 +196,5 @@ const CalledBallsBoard = ({ calledBalls, visible, onClose }: CalledBallsBoardPro
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#ddd',
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#222',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
-  },
-  closeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: '#007AFF',
-  },
-  closeButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  table: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    marginBottom: 6,
-  },
-  headerCell: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 6,
-  },
-  headerLetter: {
-    fontSize: 26,
-    fontWeight: '800',
-  },
-  dataRow: {
-    flexDirection: 'row',
-    marginBottom: 4,
-  },
-  ballCell: {
-    flex: 1,
-    marginHorizontal: 2,
-    aspectRatio: 1,
-    maxHeight: 44,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ballCellUncalled: {
-    backgroundColor: '#ECECEC',
-  },
-  ballNumber: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  ballNumberCalled: {
-    color: '#fff',
-  },
-  ballNumberUncalled: {
-    color: '#A8A8A8',
-  },
-});
 
 export default CalledBallsBoard;

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StatusBar,
   ScrollView,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -17,8 +18,256 @@ import CalledBallsBoard from './src/components/CalledBallsBoard';
 import GameSettingsModal from './src/components/GameSettingsModal';
 import WinnerOverlay from './src/components/WinnerOverlay';
 import { ROUND_SEQUENCE, buildPreviewPatterns, getRoundConfig } from './src/utils/winPatterns';
+import { useTheme } from './src/theme/ThemeContext';
+import { ThemeColors } from './src/theme/colors';
+
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    gameHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingBottom: 4,
+    },
+    roundInfo: {
+      flex: 1,
+      paddingRight: 8,
+    },
+    roundInfoLabel: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
+    },
+    roundInfoName: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: colors.text,
+      marginTop: 2,
+    },
+    settingsButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.12,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    settingsIcon: {
+      fontSize: 24,
+      color: colors.text,
+      lineHeight: 28,
+    },
+    lobbyScrollContent: {
+      flexGrow: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+      paddingVertical: 32,
+    },
+    title: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 24,
+    },
+    subtitle: {
+      fontSize: 18,
+      color: colors.textSecondary,
+      marginBottom: 14,
+      alignSelf: 'flex-start',
+      width: '100%',
+      maxWidth: 360,
+    },
+    selectionContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+      marginBottom: 28,
+      justifyContent: 'center',
+      width: '100%',
+      maxWidth: 360,
+    },
+    selectionButton: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: colors.surfaceMuted,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    selectionButtonActive: {
+      backgroundColor: '#007AFF',
+    },
+    selectionText: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: '#fff',
+    },
+    roundLineupHint: {
+      fontSize: 14,
+      color: colors.textMuted,
+      marginBottom: 12,
+      alignSelf: 'flex-start',
+      width: '100%',
+      maxWidth: 360,
+    },
+    roundLineup: {
+      width: '100%',
+      maxWidth: 360,
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 8,
+      marginBottom: 28,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 6,
+      elevation: 3,
+    },
+    roundLineupRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 12,
+      paddingVertical: 14,
+      paddingHorizontal: 12,
+      borderRadius: 12,
+    },
+    roundLineupRowOff: {
+      opacity: 0.55,
+    },
+    roundCheckbox: {
+      width: 26,
+      height: 26,
+      borderRadius: 7,
+      borderWidth: 2,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 2,
+      backgroundColor: colors.surface,
+    },
+    roundCheckboxSelected: {
+      backgroundColor: '#007AFF',
+      borderColor: '#007AFF',
+    },
+    roundCheckboxMark: {
+      color: '#fff',
+      fontSize: 15,
+      fontWeight: '800',
+      lineHeight: 17,
+    },
+    roundLineupText: {
+      flex: 1,
+    },
+    roundLineupLabel: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    roundLineupLabelOff: {
+      color: colors.textSecondary,
+    },
+    roundLineupDescription: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+    },
+    roundLineupDescriptionOff: {
+      color: colors.textMuted,
+    },
+    appearanceSection: {
+      width: '100%',
+      maxWidth: 360,
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 28,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 6,
+      elevation: 3,
+    },
+    appearanceRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    appearanceLabel: {
+      fontSize: 17,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    appearanceHint: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 4,
+    },
+    startButton: {
+      backgroundColor: '#34C759',
+      paddingVertical: 15,
+      paddingHorizontal: 40,
+      borderRadius: 12,
+    },
+    startButtonDisabled: {
+      backgroundColor: '#a8ddb4',
+    },
+    startButtonText: {
+      color: '#fff',
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+    cardsContainer: {
+      flex: 1,
+      paddingHorizontal: 10,
+      paddingTop: 10,
+      paddingBottom: 100,
+    },
+    floatingButtonContainer: {
+      position: 'absolute',
+      bottom: 30,
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    bingoButton: {
+      backgroundColor: '#FF3B30',
+      paddingVertical: 20,
+      paddingHorizontal: 60,
+      borderRadius: 50,
+      shadowColor: '#FF3B30',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+    bingoButtonText: {
+      color: '#fff',
+      fontSize: 28,
+      fontWeight: '900',
+      letterSpacing: 2,
+    },
+  });
+}
 
 export default function App() {
+  const { colors, isDarkMode, setDarkMode } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [selectedCardCount, setSelectedCardCount] = useState<number>(1);
   const [selectedRounds, setSelectedRounds] = useState<boolean[]>(() =>
     ROUND_SEQUENCE.map(() => true),
@@ -128,7 +377,7 @@ export default function App() {
   if (gameState === 'lobby') {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" />
+        <StatusBar barStyle={colors.statusBarStyle} />
         <ScrollView
           contentContainerStyle={styles.lobbyScrollContent}
           showsVerticalScrollIndicator={false}
@@ -199,6 +448,25 @@ export default function App() {
             })}
           </View>
 
+          <Text style={styles.subtitle}>Appearance</Text>
+          <View style={styles.appearanceSection}>
+            <View style={styles.appearanceRow}>
+              <View>
+                <Text style={styles.appearanceLabel}>Dark Mode</Text>
+                <Text style={styles.appearanceHint}>
+                  {isDarkMode ? 'On' : 'Off'}
+                </Text>
+              </View>
+              <Switch
+                value={isDarkMode}
+                onValueChange={setDarkMode}
+                trackColor={{ false: colors.surfaceMuted, true: '#007AFF' }}
+                thumbColor="#ffffff"
+                accessibilityLabel="Toggle dark mode"
+              />
+            </View>
+          </View>
+
           <TouchableOpacity
             style={[styles.startButton, rounds.length === 0 && styles.startButtonDisabled]}
             onPress={startGame}
@@ -214,7 +482,7 @@ export default function App() {
   // --- RENDER: PLAYING / WIN ---
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle={colors.statusBarStyle} />
 
       {gameState === 'playing' && (
         <View style={styles.gameHeader}>
@@ -313,216 +581,3 @@ export default function App() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  gameHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingBottom: 4,
-  },
-  roundInfo: {
-    flex: 1,
-    paddingRight: 8,
-  },
-  roundInfoLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#666',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  roundInfoName: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#222',
-    marginTop: 2,
-  },
-  settingsButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  settingsIcon: {
-    fontSize: 24,
-    color: '#333',
-    lineHeight: 28,
-  },
-  lobbyScrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    paddingVertical: 32,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 24,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#666',
-    marginBottom: 14,
-    alignSelf: 'flex-start',
-    width: '100%',
-    maxWidth: 360,
-  },
-  selectionContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 28,
-    justifyContent: 'center',
-    width: '100%',
-    maxWidth: 360,
-  },
-  selectionButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#e0e0e0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  selectionButtonActive: {
-    backgroundColor: '#007AFF',
-  },
-  selectionText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  roundLineupHint: {
-    fontSize: 14,
-    color: '#888',
-    marginBottom: 12,
-    alignSelf: 'flex-start',
-    width: '100%',
-    maxWidth: 360,
-  },
-  roundLineup: {
-    width: '100%',
-    maxWidth: 360,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 8,
-    marginBottom: 28,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  roundLineupRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-  },
-  roundLineupRowOff: {
-    opacity: 0.55,
-  },
-  roundCheckbox: {
-    width: 26,
-    height: 26,
-    borderRadius: 7,
-    borderWidth: 2,
-    borderColor: '#c5c5c5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-    backgroundColor: '#fff',
-  },
-  roundCheckboxSelected: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  roundCheckboxMark: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '800',
-    lineHeight: 17,
-  },
-  roundLineupText: {
-    flex: 1,
-  },
-  roundLineupLabel: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#222',
-    marginBottom: 4,
-  },
-  roundLineupLabelOff: {
-    color: '#666',
-  },
-  roundLineupDescription: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
-  },
-  roundLineupDescriptionOff: {
-    color: '#999',
-  },
-  startButton: {
-    backgroundColor: '#34C759',
-    paddingVertical: 15,
-    paddingHorizontal: 40,
-    borderRadius: 12,
-  },
-  startButtonDisabled: {
-    backgroundColor: '#a8ddb4',
-  },
-  startButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  cardsContainer: {
-    flex: 1,
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    paddingBottom: 100,
-  },
-  floatingButtonContainer: {
-    position: 'absolute',
-    bottom: 30,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bingoButton: {
-    backgroundColor: '#FF3B30',
-    paddingVertical: 20,
-    paddingHorizontal: 60,
-    borderRadius: 50,
-    shadowColor: '#FF3B30',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  bingoButtonText: {
-    color: '#fff',
-    fontSize: 28,
-    fontWeight: '900',
-    letterSpacing: 2,
-  },
-});

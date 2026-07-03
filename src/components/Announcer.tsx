@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useTheme } from '../theme/ThemeContext';
+import { ThemeColors } from '../theme/colors';
 import BingoBall from './BingoBall';
 
 interface AnnouncerProps {
@@ -45,10 +47,12 @@ function RecentBallsRow({
   balls,
   shiftProgress,
   isShifting,
+  styles,
 }: {
   balls: number[];
   shiftProgress: AnimatedValue | null;
   isShifting: boolean;
+  styles: ReturnType<typeof createStyles>;
 }) {
   if (balls.length === 0) {
     return <View style={styles.recentPlaceholder} />;
@@ -105,6 +109,9 @@ const Announcer = ({
   onToggleAutoMode,
   onRecentPress,
 }: AnnouncerProps) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const previousBalls = recentBalls.filter((ball) => ball !== currentBall);
   const displayBalls = previousBalls.slice(-3).reverse();
 
@@ -339,6 +346,7 @@ const Announcer = ({
               balls={recentBallsToShow}
               shiftProgress={isShifting ? transitionProgress : null}
               isShifting={isShifting}
+              styles={styles}
             />
           </View>
         </TouchableOpacity>
@@ -347,12 +355,13 @@ const Announcer = ({
   );
 };
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   container: {
     paddingVertical: 14,
     paddingLeft: 6,
     paddingRight: 8,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
     borderRadius: 10,
     marginHorizontal: 10,
     marginVertical: 8,
@@ -372,7 +381,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 11,
     marginBottom: 6,
-    color: '#666',
+    color: colors.textSecondary,
     textTransform: 'uppercase',
     textAlign: 'center',
   },
@@ -392,18 +401,18 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#e8e8e8',
+    backgroundColor: colors.controlBackground,
     alignItems: 'center',
     justifyContent: 'center',
   },
   controlButtonActive: {
-    backgroundColor: '#D4EDFF',
+    backgroundColor: colors.controlActiveBackground,
     borderWidth: 2,
-    borderColor: '#007AFF',
+    borderColor: colors.controlActiveBorder,
   },
   controlIcon: {
     fontSize: 18,
-    color: '#333',
+    color: colors.text,
     lineHeight: 22,
   },
   windowBox: {
@@ -411,8 +420,8 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#d0d0d0',
-    backgroundColor: '#fafafa',
+    borderColor: colors.windowBoxBorder,
+    backgroundColor: colors.windowBoxBackground,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -445,9 +454,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: '#E6F2FF',
+    backgroundColor: colors.calledBallsButtonBackground,
     borderWidth: 1,
-    borderColor: '#A8CEFF',
+    borderColor: colors.calledBallsButtonBorder,
     marginBottom: 6,
   },
   calledBallsButtonDisabled: {
@@ -455,7 +464,7 @@ const styles = StyleSheet.create({
   },
   calledBallsButtonText: {
     fontSize: 11,
-    color: '#0051A8',
+    color: colors.calledBallsButtonText,
     textTransform: 'uppercase',
     textAlign: 'center',
     fontWeight: '600',
@@ -481,6 +490,7 @@ const styles = StyleSheet.create({
     width: SMALL_BALL,
     height: SMALL_BALL,
   },
-});
+  });
+}
 
 export default Announcer;

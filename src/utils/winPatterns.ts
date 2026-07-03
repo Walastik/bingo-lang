@@ -15,6 +15,14 @@ export type RoundType =
   | 'postageStamp'
   | 'sixPack'
   | 'pyramid'
+  | 'fourCorners'
+  | 'x'
+  | 'tOrZ'
+  | 'h'
+  | 'kite'
+  | 'arrowhead'
+  | 'outsideFrame'
+  | 'insideFrame'
   | 'blackout';
 
 export interface RoundConfig {
@@ -156,12 +164,182 @@ export const buildBlackoutPattern = (): WinPattern => ({
   })),
 });
 
+const dedupeCells = (cells: CellCoord[]): CellCoord[] => {
+  const cellMap = new Map<string, CellCoord>();
+  for (const cell of cells) {
+    cellMap.set(`${cell.row}-${cell.col}`, cell);
+  }
+  return Array.from(cellMap.values());
+};
+
+const buildRowCells = (size: number, row: number): CellCoord[] =>
+  Array.from({ length: size }, (_, col) => ({ row, col }));
+
+const buildColumnCells = (size: number, col: number): CellCoord[] =>
+  Array.from({ length: size }, (_, row) => ({ row, col }));
+
+/** Four outermost corners of the card. */
+export const buildFourCornersPattern = (): WinPattern => ({
+  id: 'four-corners',
+  label: 'Four corners',
+  cells: [
+    { row: 0, col: 0 },
+    { row: 0, col: 4 },
+    { row: 4, col: 0 },
+    { row: 4, col: 4 },
+  ],
+});
+
+/** Both diagonals crossing through the center free space. */
+export const buildXPattern = (): WinPattern => ({
+  id: 'x',
+  label: 'X',
+  cells: dedupeCells([
+    ...buildPrimaryDiagonalPattern(5).cells,
+    ...buildSecondaryDiagonalPattern(5).cells,
+  ]),
+});
+
+const buildTPattern = (): WinPattern => ({
+  id: 't',
+  label: 'T',
+  cells: [...buildRowCells(5, 0), ...buildColumnCells(5, 2).filter(cell => cell.row > 0)],
+});
+
+const buildZPattern = (): WinPattern => ({
+  id: 'z',
+  label: 'Z',
+  cells: [
+    ...buildRowCells(5, 0),
+    { row: 1, col: 3 },
+    { row: 2, col: 2 },
+    { row: 3, col: 1 },
+    ...buildRowCells(5, 4),
+  ],
+});
+
+/** Top row plus a T or Z path down/across the card. */
+export const buildTOrZPatterns = (): WinPattern[] => [buildTPattern(), buildZPattern()];
+
+/** First and last columns plus the middle row. */
+export const buildHPattern = (): WinPattern => ({
+  id: 'h',
+  label: 'H',
+  cells: dedupeCells([
+    ...buildColumnCells(5, 0),
+    ...buildColumnCells(5, 4),
+    ...buildRowCells(5, 2),
+  ]),
+});
+
+const buildTopLeftKitePattern = (): WinPattern => ({
+  id: 'kite-tl',
+  label: 'Top-left kite',
+  cells: [
+    { row: 0, col: 0 },
+    { row: 0, col: 1 },
+    { row: 1, col: 0 },
+    { row: 1, col: 1 },
+    { row: 2, col: 2 },
+    { row: 3, col: 3 },
+    { row: 4, col: 4 },
+  ],
+});
+
+const buildTopRightKitePattern = (): WinPattern => ({
+  id: 'kite-tr',
+  label: 'Top-right kite',
+  cells: [
+    { row: 0, col: 3 },
+    { row: 0, col: 4 },
+    { row: 1, col: 3 },
+    { row: 1, col: 4 },
+    { row: 2, col: 2 },
+    { row: 3, col: 1 },
+    { row: 4, col: 0 },
+  ],
+});
+
+/** 2×2 corner block plus a diagonal tail to the opposite corner. */
+export const buildKitePatterns = (): WinPattern[] => [
+  buildTopLeftKitePattern(),
+  buildTopRightKitePattern(),
+];
+
+const buildArrowhead = (id: string, label: string, cells: CellCoord[]): WinPattern => ({
+  id,
+  label,
+  cells,
+});
+
+/** Corner stamp with spaces stepping toward the center. */
+export const buildArrowheadPatterns = (): WinPattern[] => [
+  buildArrowhead('arrow-tl', 'Top-left arrowhead', [
+    { row: 0, col: 0 },
+    { row: 0, col: 1 },
+    { row: 1, col: 0 },
+    { row: 1, col: 1 },
+    { row: 2, col: 2 },
+  ]),
+  buildArrowhead('arrow-tr', 'Top-right arrowhead', [
+    { row: 0, col: 3 },
+    { row: 0, col: 4 },
+    { row: 1, col: 3 },
+    { row: 1, col: 4 },
+    { row: 2, col: 2 },
+  ]),
+  buildArrowhead('arrow-bl', 'Bottom-left arrowhead', [
+    { row: 3, col: 0 },
+    { row: 3, col: 1 },
+    { row: 4, col: 0 },
+    { row: 4, col: 1 },
+    { row: 2, col: 2 },
+  ]),
+  buildArrowhead('arrow-br', 'Bottom-right arrowhead', [
+    { row: 3, col: 3 },
+    { row: 3, col: 4 },
+    { row: 4, col: 3 },
+    { row: 4, col: 4 },
+    { row: 2, col: 2 },
+  ]),
+];
+
+/** Every square along the outer edge of the card. */
+export const buildOutsideFramePattern = (): WinPattern => ({
+  id: 'outside-frame',
+  label: 'Outside frame',
+  cells: dedupeCells([
+    ...buildRowCells(5, 0),
+    ...buildRowCells(5, 4),
+    ...buildColumnCells(5, 0).filter(cell => cell.row > 0 && cell.row < 4),
+    ...buildColumnCells(5, 4).filter(cell => cell.row > 0 && cell.row < 4),
+  ]),
+});
+
+/** Inner 3×3 block with the outer border left empty. */
+export const buildInsideFramePattern = (): WinPattern => ({
+  id: 'inside-frame',
+  label: 'Inside frame',
+  cells: Array.from({ length: 9 }, (_, i) => ({
+    row: Math.floor(i / 3) + 1,
+    col: (i % 3) + 1,
+  })),
+});
+
 export const ROUND_SEQUENCE: RoundType[] = [
   'singleLine',
   'doubleLine',
   'postageStamp',
   'sixPack',
   'pyramid',
+  'fourCorners',
+  'x',
+  'tOrZ',
+  'h',
+  'kite',
+  'arrowhead',
+  'outsideFrame',
+  'insideFrame',
   'blackout',
 ];
 
@@ -203,6 +381,62 @@ const roundConfigBuilders: Record<RoundType, () => RoundConfig> = {
     patterns: buildPyramidPatterns(),
     minPatternsRequired: 1,
   }),
+  fourCorners: () => ({
+    type: 'fourCorners',
+    label: 'Four Corners',
+    description: 'Cover the four outermost corners of the card.',
+    patterns: [buildFourCornersPattern()],
+    minPatternsRequired: 1,
+  }),
+  x: () => ({
+    type: 'x',
+    label: 'X',
+    description: 'Complete both diagonals crossing through the center.',
+    patterns: [buildXPattern()],
+    minPatternsRequired: 1,
+  }),
+  tOrZ: () => ({
+    type: 'tOrZ',
+    label: 'T or Z',
+    description: 'Complete the top row plus a T or Z path down/across.',
+    patterns: buildTOrZPatterns(),
+    minPatternsRequired: 1,
+  }),
+  h: () => ({
+    type: 'h',
+    label: 'H',
+    description: 'Fill the B and O columns plus the middle row.',
+    patterns: [buildHPattern()],
+    minPatternsRequired: 1,
+  }),
+  kite: () => ({
+    type: 'kite',
+    label: 'Kite',
+    description: 'Complete a 2×2 top-corner block plus a diagonal tail.',
+    patterns: buildKitePatterns(),
+    minPatternsRequired: 1,
+  }),
+  arrowhead: () => ({
+    type: 'arrowhead',
+    label: 'Arrowhead',
+    description: 'Complete a corner stamp pointing toward the center.',
+    patterns: buildArrowheadPatterns(),
+    minPatternsRequired: 1,
+  }),
+  outsideFrame: () => ({
+    type: 'outsideFrame',
+    label: 'Outside Frame',
+    description: 'Cover every square along the outer edge of the card.',
+    patterns: [buildOutsideFramePattern()],
+    minPatternsRequired: 1,
+  }),
+  insideFrame: () => ({
+    type: 'insideFrame',
+    label: 'Inside Frame',
+    description: 'Fill the inner 3×3 block, leaving the border empty.',
+    patterns: [buildInsideFramePattern()],
+    minPatternsRequired: 1,
+  }),
   blackout: () => ({
     type: 'blackout',
     label: 'Blackout',
@@ -221,7 +455,7 @@ export const getRoundsForGame = (selectedIndices: number[]): RoundConfig[] =>
     .sort((a, b) => a - b)
     .map(index => getRoundConfig(ROUND_SEQUENCE[index]));
 
-/** All round slots selected (games 1–6). */
+/** All round slots selected. */
 export const DEFAULT_ROUND_SELECTION = ROUND_SEQUENCE.map((_, index) => index);
 
 const mergePatterns = (patterns: WinPattern[], id: string, label: string): WinPattern => {

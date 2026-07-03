@@ -7,6 +7,8 @@ import {
 } from 'react-native';
 import { BingoCard, getBallColor } from '../utils/bingoUtils';
 import { CellCoord } from '../utils/winPatterns';
+import { useTheme } from '../theme/ThemeContext';
+import { ThemeColors } from '../theme/colors';
 
 const GRID_GAP = 4;
 const GRID_COLUMNS = 5;
@@ -22,6 +24,92 @@ interface WinningCardViewProps {
   ownerLabel: string;
 }
 
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    card: {
+      width: '100%',
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 16,
+      padding: 12,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    ownerLabel: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    header: {
+      flexDirection: 'row',
+      gap: GRID_GAP,
+      marginBottom: 8,
+    },
+    headerCell: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 6,
+      borderRadius: 8,
+    },
+    headerText: {
+      fontSize: 17,
+      fontWeight: 'bold',
+      color: '#FFF',
+    },
+    grid: {
+      width: '100%',
+      gap: GRID_GAP,
+    },
+    gridRow: {
+      flexDirection: 'row',
+      gap: GRID_GAP,
+    },
+    cell: {
+      backgroundColor: colors.cellBackground,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+      overflow: 'hidden',
+    },
+    cellDaubed: {
+      backgroundColor: colors.cellDaubedBackground,
+    },
+    cellWinning: {
+      backgroundColor: '#fff8e1',
+    },
+    cellText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: colors.cellText,
+      zIndex: 2,
+    },
+    cellTextDaubed: {
+      color: '#007AFF',
+    },
+    daubMarker: {
+      position: 'absolute',
+      backgroundColor: 'rgba(0, 122, 255, 0.3)',
+      zIndex: 1,
+    },
+    winHighlight: {
+      ...StyleSheet.absoluteFillObject,
+      borderRadius: 8,
+      backgroundColor: 'rgba(255, 193, 7, 0.55)',
+      borderWidth: 2,
+      borderColor: '#FF9500',
+      zIndex: 3,
+    },
+  });
+}
+
 const WinningCardView: React.FC<WinningCardViewProps> = ({
   card,
   drawnBalls,
@@ -31,6 +119,9 @@ const WinningCardView: React.FC<WinningCardViewProps> = ({
   cardIndex = 0,
   ownerLabel,
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [gridWidth, setGridWidth] = React.useState(0);
   const cardScale = useRef(new Animated.Value(0.85)).current;
   const cardOpacity = useRef(new Animated.Value(0)).current;
@@ -218,89 +309,5 @@ const WinningCardView: React.FC<WinningCardViewProps> = ({
     </Animated.View>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  ownerLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#666',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    gap: GRID_GAP,
-    marginBottom: 8,
-  },
-  headerCell: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  headerText: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#FFF',
-  },
-  grid: {
-    width: '100%',
-    gap: GRID_GAP,
-  },
-  gridRow: {
-    flexDirection: 'row',
-    gap: GRID_GAP,
-  },
-  cell: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  cellDaubed: {
-    backgroundColor: '#e6f2ff',
-  },
-  cellWinning: {
-    backgroundColor: '#fff8e1',
-  },
-  cellText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    zIndex: 2,
-  },
-  cellTextDaubed: {
-    color: '#007AFF',
-  },
-  daubMarker: {
-    position: 'absolute',
-    backgroundColor: 'rgba(0, 122, 255, 0.3)',
-    zIndex: 1,
-  },
-  winHighlight: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 193, 7, 0.55)',
-    borderWidth: 2,
-    borderColor: '#FF9500',
-    zIndex: 3,
-  },
-});
 
 export default WinningCardView;
