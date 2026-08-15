@@ -19,9 +19,14 @@ interface AnnouncerProps {
   isPaused: boolean;
   showPauseControl: boolean;
   onTogglePause: () => void;
+  showNextControl?: boolean;
+  canCallNextBall?: boolean;
+  onNextBall?: () => void;
   isAutoMode?: boolean;
   showAutoControl?: boolean;
   onToggleAutoMode?: () => void;
+  showDeclareWinnerControl?: boolean;
+  onDeclareWinner?: () => void;
   onRecentPress?: () => void;
 }
 
@@ -104,9 +109,14 @@ const Announcer = ({
   isPaused,
   showPauseControl,
   onTogglePause,
+  showNextControl = false,
+  canCallNextBall = true,
+  onNextBall,
   isAutoMode = false,
   showAutoControl = false,
   onToggleAutoMode,
+  showDeclareWinnerControl = false,
+  onDeclareWinner,
   onRecentPress,
 }: AnnouncerProps) => {
   const { colors } = useTheme();
@@ -244,7 +254,7 @@ const Announcer = ({
       <View style={styles.row}>
         <View style={styles.leftGroup}>
           <View style={styles.nextColumn}>
-            {(showPauseControl || showAutoControl) && (
+            {(showPauseControl || showNextControl || showAutoControl) && (
               <View style={styles.controlRow}>
                 {showPauseControl && (
                   <TouchableOpacity
@@ -254,6 +264,22 @@ const Announcer = ({
                     accessibilityLabel={isPaused ? 'Resume game' : 'Pause game'}
                   >
                     <Text style={styles.controlIcon}>{isPaused ? '▶' : '⏸'}</Text>
+                  </TouchableOpacity>
+                )}
+                {showNextControl && onNextBall && (
+                  <TouchableOpacity
+                    style={[
+                      styles.controlButton,
+                      !canCallNextBall && styles.controlButtonDisabled,
+                    ]}
+                    onPress={onNextBall}
+                    disabled={!canCallNextBall}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      canCallNextBall ? 'Call next ball' : 'All balls have been called'
+                    }
+                  >
+                    <Text style={styles.controlIcon}>⏭</Text>
                   </TouchableOpacity>
                 )}
                 {showAutoControl && onToggleAutoMode && (
@@ -318,38 +344,56 @@ const Announcer = ({
           </View>
         </View>
 
-        <TouchableOpacity
-          style={styles.recentColumn}
-          onPress={onRecentPress}
-          disabled={!onRecentPress}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel={
-            calledBallsCount >= 4
-              ? `View all called balls, ${calledBallsCount} called`
-              : 'View all called balls'
-          }
-          accessibilityHint="Opens the full called balls board"
-        >
-          <View style={[styles.calledBallsButton, !onRecentPress && styles.calledBallsButtonDisabled]}>
-            <Text
-              style={styles.calledBallsButtonText}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.75}
+        <View style={styles.recentColumn}>
+          {showDeclareWinnerControl && onDeclareWinner && (
+            <TouchableOpacity
+              style={styles.declareWinnerButton}
+              onPress={onDeclareWinner}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Declare winner and move to the next game"
             >
-              {calledBallsLabel}
-            </Text>
-          </View>
-          <View style={[styles.recentRow, isShifting && styles.recentRowClipped]}>
-            <RecentBallsRow
-              balls={recentBallsToShow}
-              shiftProgress={isShifting ? transitionProgress : null}
-              isShifting={isShifting}
-              styles={styles}
-            />
-          </View>
-        </TouchableOpacity>
+              <Text style={styles.declareWinnerButtonText}>Declare Winner</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={styles.calledBallsColumn}
+            onPress={onRecentPress}
+            disabled={!onRecentPress}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={
+              calledBallsCount >= 4
+                ? `View all called balls, ${calledBallsCount} called`
+                : 'View all called balls'
+            }
+            accessibilityHint="Opens the full called balls board"
+          >
+            <View
+              style={[
+                styles.calledBallsButton,
+                !onRecentPress && styles.calledBallsButtonDisabled,
+              ]}
+            >
+              <Text
+                style={styles.calledBallsButtonText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
+                {calledBallsLabel}
+              </Text>
+            </View>
+            <View style={[styles.recentRow, isShifting && styles.recentRowClipped]}>
+              <RecentBallsRow
+                balls={recentBallsToShow}
+                shiftProgress={isShifting ? transitionProgress : null}
+                isShifting={isShifting}
+                styles={styles}
+              />
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -410,6 +454,9 @@ function createStyles(colors: ThemeColors) {
     borderWidth: 2,
     borderColor: colors.controlActiveBorder,
   },
+  controlButtonDisabled: {
+    opacity: 0.45,
+  },
   controlIcon: {
     fontSize: 18,
     color: colors.text,
@@ -448,6 +495,21 @@ function createStyles(colors: ThemeColors) {
     flexShrink: 0,
     alignItems: 'flex-end',
     marginLeft: 10,
+  },
+  declareWinnerButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#34C759',
+    marginBottom: 8,
+  },
+  declareWinnerButtonText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  calledBallsColumn: {
+    alignItems: 'flex-end',
   },
   calledBallsButton: {
     alignSelf: 'flex-end',

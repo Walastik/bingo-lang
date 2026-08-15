@@ -33,9 +33,14 @@ export type WinResult = WinningCardResult & { isNpc: boolean };
 interface UseBingoGameParams {
   userCardCount: number;
   selectedRoundIndices: number[];
+  isCallerOnly: boolean;
 }
 
-const useBingoGame = ({ userCardCount, selectedRoundIndices }: UseBingoGameParams) => {
+const useBingoGame = ({
+  userCardCount,
+  selectedRoundIndices,
+  isCallerOnly,
+}: UseBingoGameParams) => {
   const [userCards, setUserCards] = useState<BingoCard[]>([]);
   const [npcCards, setNpcCards] = useState<BingoCard[]>([]);
   const npcCardsRef = useRef<BingoCard[]>([]);
@@ -109,6 +114,12 @@ const useBingoGame = ({ userCardCount, selectedRoundIndices }: UseBingoGameParam
   }, [clearUpcomingBallTimeout]);
 
   const generateFreshCards = useCallback(() => {
+    if (isCallerOnly) {
+      setNpcCards([]);
+      setUserCards([]);
+      return;
+    }
+
     const newNPCCards: BingoCard[] = [];
     for (let i = 0; i < 10; i++) {
       newNPCCards.push(generateCard());
@@ -120,7 +131,7 @@ const useBingoGame = ({ userCardCount, selectedRoundIndices }: UseBingoGameParam
       newUserCards.push(generateCard());
     }
     setUserCards(newUserCards);
-  }, [userCardCount]);
+  }, [isCallerOnly, userCardCount]);
 
   const resetRoundBoard = useCallback(() => {
     deckRef.current = generateDeck();
@@ -259,9 +270,11 @@ const useBingoGame = ({ userCardCount, selectedRoundIndices }: UseBingoGameParam
     setCurrentBall(nextBall);
 
     const roundConfig = currentRoundRef.current;
-    const hasNPCWon = npcCardsRef.current.some(card =>
-      checkWin(card, drawnBallsSetRef.current, false, undefined, roundConfig),
-    );
+    const hasNPCWon =
+      !isCallerOnly &&
+      npcCardsRef.current.some(card =>
+        checkWin(card, drawnBallsSetRef.current, false, undefined, roundConfig),
+      );
 
     if (hasNPCWon) {
       clearDrawTimer();
@@ -283,6 +296,7 @@ const useBingoGame = ({ userCardCount, selectedRoundIndices }: UseBingoGameParam
     applyAutoDaubsForDrawnBalls,
     clearDrawTimer,
     clearUpcomingBallTimeout,
+    isCallerOnly,
     recordNpcWin,
     scheduleUpcomingBallReveal,
   ]);
@@ -320,9 +334,21 @@ const useBingoGame = ({ userCardCount, selectedRoundIndices }: UseBingoGameParam
     setIsPaused(false);
     setGameState('playing');
 
+    if (isCallerOnly) {
+      return;
+    }
+
     drawNextBall();
     scheduleNextBallDraw();
-  }, [gameState, drawNextBall, scheduleNextBallDraw]);
+  }, [gameState, isCallerOnly, drawNextBall, scheduleNextBallDraw]);
+
+  const callNextBall = useCallback(() => {
+    if (!isCallerOnly || gameStateRef.current !== 'playing') {
+      return;
+    }
+
+    drawNextBall();
+  }, [drawNextBall, isCallerOnly]);
 
   const pauseGame = useCallback(() => {
     if (gameStateRef.current !== 'playing' || isPausedRef.current) {
@@ -544,6 +570,39 @@ const useBingoGame = ({ userCardCount, selectedRoundIndices }: UseBingoGameParam
     setGameState('lobby');
   }, [clearDrawTimer, clearUpcomingBallTimeout, generateFreshCards, resetRoundBoard]);
 
+  const declareWinner = useCallback(() => {
+    if (!isCallerOnly || gameStateRef.current !== 'playing') {
+      return;
+    }
+
+    const isFinalRound = currentRoundIndexRef.current >= roundCountRef.current - 1;
+    if (isFinalRound) {
+      resetGame();
+      return;
+    }
+
+    clearDrawTimer();
+    clearUpcomingBallTimeout();
+    remainingDrawMsRef.current = null;
+    remainingUpcomingRevealMsRef.current = null;
+    setWinResult(null);
+
+    const nextRoundIndex = currentRoundIndexRef.current + 1;
+    setCurrentRoundIndex(nextRoundIndex);
+    currentRoundIndexRef.current = nextRoundIndex;
+
+    generateFreshCards();
+    resetRoundBoard();
+    setGameState('playing');
+  }, [
+    clearDrawTimer,
+    clearUpcomingBallTimeout,
+    generateFreshCards,
+    isCallerOnly,
+    resetGame,
+    resetRoundBoard,
+  ]);
+
   return {
     userCards,
     npcCards,
@@ -562,6 +621,8 @@ const useBingoGame = ({ userCardCount, selectedRoundIndices }: UseBingoGameParam
     cardOrder,
     winResult,
     startGame,
+    callNextBall,
+    declareWinner,
     pauseGame,
     resumeGame,
     togglePause,

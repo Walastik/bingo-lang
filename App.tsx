@@ -15,6 +15,7 @@ import useBingoGame, { GameSpeed } from './src/hooks/useBingoGame';
 import BingoCardCarousel from './src/components/BingoCardCarousel';
 import Announcer from './src/components/Announcer';
 import CalledBallsBoard from './src/components/CalledBallsBoard';
+import DeclareWinnerModal from './src/components/DeclareWinnerModal';
 import GameSettingsModal from './src/components/GameSettingsModal';
 import WinnerOverlay from './src/components/WinnerOverlay';
 import { ROUND_SEQUENCE, buildPreviewPatterns, getRoundConfig } from './src/utils/winPatterns';
@@ -89,6 +90,32 @@ function createStyles(colors: ThemeColors) {
       alignSelf: 'flex-start',
       width: '100%',
       maxWidth: 360,
+    },
+    modeContainer: {
+      flexDirection: 'row',
+      gap: 12,
+      width: '100%',
+      maxWidth: 360,
+      marginBottom: 28,
+    },
+    modeButton: {
+      flex: 1,
+      paddingVertical: 14,
+      paddingHorizontal: 12,
+      borderRadius: 12,
+      backgroundColor: colors.surfaceMuted,
+      alignItems: 'center',
+    },
+    modeButtonActive: {
+      backgroundColor: '#007AFF',
+    },
+    modeButtonText: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: '700',
+    },
+    modeButtonTextActive: {
+      color: '#fff',
     },
     selectionContainer: {
       flexDirection: 'row',
@@ -236,6 +263,9 @@ function createStyles(colors: ThemeColors) {
       paddingTop: 10,
       paddingBottom: 100,
     },
+    callerBoardContainer: {
+      paddingBottom: 10,
+    },
     floatingButtonContainer: {
       position: 'absolute',
       bottom: 30,
@@ -269,10 +299,12 @@ export default function App() {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [selectedCardCount, setSelectedCardCount] = useState<number>(1);
+  const [isCallerOnly, setIsCallerOnly] = useState(false);
   const [selectedRounds, setSelectedRounds] = useState<boolean[]>(() =>
     ROUND_SEQUENCE.map(() => true),
   );
   const [showCalledBallsBoard, setShowCalledBallsBoard] = useState(false);
+  const [showDeclareWinnerModal, setShowDeclareWinnerModal] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
 
   const selectedRoundIndices = useMemo(
@@ -304,6 +336,8 @@ export default function App() {
     drawnBalls,
     userDaubs,
     startGame,
+    callNextBall,
+    declareWinner,
     daubSpace,
     autoDaubColumn,
     callBingo,
@@ -327,16 +361,21 @@ export default function App() {
   } = useBingoGame({
     userCardCount: selectedCardCount,
     selectedRoundIndices,
+    isCallerOnly,
   });
 
   const handleOpenSettings = () => {
-    pauseGame();
+    if (!isCallerOnly) {
+      pauseGame();
+    }
     setShowSettingsMenu(true);
   };
 
   const handleCloseSettings = () => {
     setShowSettingsMenu(false);
-    resumeGame();
+    if (!isCallerOnly) {
+      resumeGame();
+    }
   };
 
   const handleQuitGame = () => {
@@ -361,11 +400,17 @@ export default function App() {
     setGameSpeed(speed);
   };
 
+  const handleConfirmWinner = () => {
+    setShowDeclareWinnerModal(false);
+    declareWinner();
+  };
+
   const showOverlay =
-    gameState === 'roundWon' ||
-    gameState === 'gameWon' ||
-    gameState === 'npcWon' ||
-    gameState === 'invalidBingo';
+    !isCallerOnly &&
+    (gameState === 'roundWon' ||
+      gameState === 'gameWon' ||
+      gameState === 'npcWon' ||
+      gameState === 'invalidBingo');
 
   const hasMoreRounds = currentRoundNumber < totalRounds;
   const previewPatterns = useMemo(
@@ -384,21 +429,53 @@ export default function App() {
         >
           <Text style={styles.title}>Bingo Lang!</Text>
 
-          <Text style={styles.subtitle}>Cards</Text>
-          <View style={styles.selectionContainer}>
-            {[1, 2, 3, 4].map((num) => (
-              <TouchableOpacity
-                key={num}
-                style={[
-                  styles.selectionButton,
-                  selectedCardCount === num && styles.selectionButtonActive,
-                ]}
-                onPress={() => setSelectedCardCount(num)}
+          <Text style={styles.subtitle}>Mode</Text>
+          <View style={styles.modeContainer}>
+            <TouchableOpacity
+              style={[styles.modeButton, !isCallerOnly && styles.modeButtonActive]}
+              onPress={() => setIsCallerOnly(false)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: !isCallerOnly }}
+            >
+              <Text
+                style={[styles.modeButtonText, !isCallerOnly && styles.modeButtonTextActive]}
               >
-                <Text style={styles.selectionText}>{num}</Text>
-              </TouchableOpacity>
-            ))}
+                Play Bingo
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modeButton, isCallerOnly && styles.modeButtonActive]}
+              onPress={() => setIsCallerOnly(true)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isCallerOnly }}
+            >
+              <Text
+                style={[styles.modeButtonText, isCallerOnly && styles.modeButtonTextActive]}
+              >
+                Caller Only
+              </Text>
+            </TouchableOpacity>
           </View>
+
+          {!isCallerOnly && (
+            <>
+              <Text style={styles.subtitle}>Cards</Text>
+              <View style={styles.selectionContainer}>
+                {[1, 2, 3, 4].map((num) => (
+                  <TouchableOpacity
+                    key={num}
+                    style={[
+                      styles.selectionButton,
+                      selectedCardCount === num && styles.selectionButtonActive,
+                    ]}
+                    onPress={() => setSelectedCardCount(num)}
+                  >
+                    <Text style={styles.selectionText}>{num}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
 
           <Text style={styles.subtitle}>Round lineup</Text>
           <Text style={styles.roundLineupHint}>Tap a game to include or exclude it.</Text>
@@ -472,7 +549,9 @@ export default function App() {
             onPress={startGame}
             disabled={rounds.length === 0}
           >
-            <Text style={styles.startButtonText}>Start Game</Text>
+            <Text style={styles.startButtonText}>
+              {isCallerOnly ? 'Start Calling' : 'Start Game'}
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
@@ -513,55 +592,79 @@ export default function App() {
         onClose={handleCloseSettings}
       />
 
+      <DeclareWinnerModal
+        visible={showDeclareWinnerModal}
+        onConfirm={handleConfirmWinner}
+        onCancel={() => setShowDeclareWinnerModal(false)}
+      />
+
       <Announcer
         currentBall={currentBall}
         upcomingBall={upcomingBall}
         recentBalls={drawnBalls}
         isPaused={isPaused}
-        showPauseControl={gameState === 'playing'}
+        showPauseControl={gameState === 'playing' && !isCallerOnly}
         onTogglePause={togglePause}
+        showNextControl={gameState === 'playing' && isCallerOnly}
+        canCallNextBall={drawnBalls.length < 75}
+        onNextBall={callNextBall}
         isAutoMode={isAutoMode}
-        showAutoControl={gameState === 'playing'}
+        showAutoControl={gameState === 'playing' && !isCallerOnly}
         onToggleAutoMode={toggleAutoMode}
-        onRecentPress={() => setShowCalledBallsBoard(true)}
+        showDeclareWinnerControl={gameState === 'playing' && isCallerOnly}
+        onDeclareWinner={() => setShowDeclareWinnerModal(true)}
+        onRecentPress={isCallerOnly ? undefined : () => setShowCalledBallsBoard(true)}
       />
 
-      <CalledBallsBoard
-        calledBalls={drawnBalls}
-        visible={showCalledBallsBoard}
-        onClose={() => setShowCalledBallsBoard(false)}
-      />
+      {!isCallerOnly && (
+        <CalledBallsBoard
+          calledBalls={drawnBalls}
+          visible={showCalledBallsBoard}
+          onClose={() => setShowCalledBallsBoard(false)}
+        />
+      )}
 
-      <View style={styles.cardsContainer}>
-        {userCards && userCards.length > 0 && (
-          <BingoCardCarousel
-            cards={cardOrder.map(index => userCards[index])}
-            cardIndices={cardOrder}
-            userDaubs={userDaubs}
-            winPatterns={previewPatterns}
-            previewKey={currentRound.type}
-            onCellPress={(displayIndex, flatIndex) => {
-              const cardIndex = cardOrder[displayIndex];
-              const row = Math.floor(flatIndex / 5);
-              const col = flatIndex % 5;
-              daubSpace(cardIndex, row, col);
-            }}
-            onHeaderPress={(displayIndex, col) => {
-              autoDaubColumn(cardOrder[displayIndex], col);
-            }}
-          />
+      <View
+        style={[
+          styles.cardsContainer,
+          isCallerOnly && styles.callerBoardContainer,
+        ]}
+      >
+        {isCallerOnly ? (
+          <CalledBallsBoard calledBalls={drawnBalls} inline />
+        ) : (
+          userCards && userCards.length > 0 && (
+            <BingoCardCarousel
+              cards={cardOrder.map(index => userCards[index])}
+              cardIndices={cardOrder}
+              userDaubs={userDaubs}
+              winPatterns={previewPatterns}
+              previewKey={currentRound.type}
+              onCellPress={(displayIndex, flatIndex) => {
+                const cardIndex = cardOrder[displayIndex];
+                const row = Math.floor(flatIndex / 5);
+                const col = flatIndex % 5;
+                daubSpace(cardIndex, row, col);
+              }}
+              onHeaderPress={(displayIndex, col) => {
+                autoDaubColumn(cardOrder[displayIndex], col);
+              }}
+            />
+          )
         )}
       </View>
 
-      <View style={styles.floatingButtonContainer}>
-        <TouchableOpacity
-          style={styles.bingoButton}
-          onPress={callBingo}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.bingoButtonText}>BINGO!</Text>
-        </TouchableOpacity>
-      </View>
+      {!isCallerOnly && (
+        <View style={styles.floatingButtonContainer}>
+          <TouchableOpacity
+            style={styles.bingoButton}
+            onPress={callBingo}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.bingoButtonText}>BINGO!</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {showOverlay && (
         <WinnerOverlay
