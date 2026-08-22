@@ -3,7 +3,7 @@ import { registerRootComponent } from 'expo';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import App from './App';
-import { ThemeProvider } from './src/theme/ThemeContext';
+import { ThemeProvider } from '@/theme/ThemeContext';
 
 function Root() {
   return React.createElement(
