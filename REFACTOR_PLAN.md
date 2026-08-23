@@ -18,25 +18,40 @@ Starting point: 4,637 lines / 17 files, 8 files over budget.
 
 ## Phase 1 — Pure game logic (`src/game/`)
 
-- [ ] `types.ts` — `BingoCard`, `WinningCardResult`, `CellCoord`, `WinPattern`, `RoundType`,
-      `RoundConfig`, `GameState`, `GameSpeed`, `WinResult`
-- [ ] `constants.ts` — `GRID_SIZE`, `FREE_INDEX`, `TOTAL_BALLS`, `GAME_SPEED_OPTIONS`,
-      draw-interval math
-- [ ] `card.ts` — `generateCard`, `generateDeck`
-- [ ] `ballFormat.ts` — `getBallString`, `getBallColor`
-- [ ] `winCheck.ts` — cell-marked checker, `checkWin`, `findWinningCard`
-- [ ] `proximity.ts` — `getBallsNeededForBingo`, `sortCardIndicesByProximity`
-- [ ] `patterns/primitives.ts` — row/col/diagonal cells, `dedupeCells`, `mergeCells`
-      (dedupes the merge helper duplicated in `winPatterns.ts` and `bingoUtils.ts`)
-- [ ] `patterns/lines.ts`, `blocks.ts`, `letters.ts`, `figures.ts` — the 14 pattern builders
-- [ ] `patterns/roundConfigs.ts` — `ROUND_SEQUENCE`, builder registry, `getRoundConfig`,
+- [x] `types.ts` — `BingoCard`, `WinningCardResult`, `CellCoord`, `WinPattern`, `RoundType`,
+      `RoundConfig`, `GameState`, `WinResult`
+- [x] `constants.ts` — board geometry plus the `cellKey`/`daubKey` builders
+- [x] `speed.ts` — `GAME_SPEED_OPTIONS`, `GameSpeed`, draw-interval math (split out of the planned
+      `constants.ts`, which was becoming a grab bag; Phase 4's `useBallCaller` imports just this)
+- [x] `card.ts` — `generateCard`, `generateDeck`
+- [x] `ballFormat.ts` — `getBallString`, `getBallColor`
+- [x] `winCheck.ts` — cell-marked checker, `checkWin`, `findWinningCard`
+- [x] `proximity.ts` — `getBallsNeededForBingo`, `sortCardIndicesByProximity`
+- [x] `patterns/primitives.ts` — row/col/diagonal cells, `dedupeCells`, `mergeCells`,
+      `getPatternGroups`
+- [x] `patterns/lines.ts`, `blocks.ts`, `letters.ts`, `figures.ts` — the 14 pattern builders
+- [x] `patterns/roundConfigs.ts` — `ROUND_SEQUENCE`, builder registry, `getRoundConfig`,
       `getRoundsForGame`
-- [ ] `patterns/previewPatterns.ts` — `buildPreviewPatterns`
-- [ ] Install `jest-expo` via `npx expo install`; add `npm test`
-- [ ] Tests: `card.test.ts`, `winCheck.test.ts`, `proximity.test.ts`, `roundConfigs.test.ts`
-- [ ] Migrate all import sites to `@/game/*`, then delete `src/utils/`
-- [ ] Delete dead code: `ACTIVE_WIN_PATTERNS`, `MAX_ROUNDS`, `DEFAULT_ROUND_SELECTION`,
-      `src/components/BingoCell.tsx`
+- [x] `patterns/previewPatterns.ts` — `buildPreviewPatterns`
+- [x] `jest-expo` installed; `npm test` added. No `moduleNameMapper` needed: the preset derives it
+      from `tsconfig.json` paths. `testMatch` is scoped to `src/**/*.test.ts` so fixtures can live
+      in `__tests__` without being collected as suites.
+- [x] 74 tests across `card`, `winCheck`, `proximity`, and `roundConfigs`
+- [x] All import sites migrated to `@/`; `src/utils/` deleted
+- [x] Dead code deleted: `ACTIVE_WIN_PATTERNS`, `MAX_ROUNDS`, `DEFAULT_ROUND_SELECTION`,
+      `BingoCell.tsx`, and `BingoCard.daubed` / `BingoCard.columns` (written by `generateCard`,
+      never read — daubs live in the `userDaubs` set)
+- [x] Three duplications collapsed: the merge-cells helper, the pattern-pairing helper, and
+      `CalledBallsBoard`'s own copy of the column letters and ball ranges
+- [x] `roundConfig` is now a required parameter on `checkWin`, `findWinningCard`, and the proximity
+      functions. It silently defaulted to single-line before; every caller already passed it.
+
+### Open question raised by the tests
+
+`getBallsNeededForBingo` takes `userDaubs` and `isAutoMode`, but they cannot change its result: it
+counts only *uncalled* balls, and a called-but-undaubed space is skipped either way. So carousel
+ordering ignores whether you have actually daubed. Current behavior is locked in by a test. Decide
+whether missed daubs should push a card down the order before removing the parameters.
 
 ## Phase 2 — Style extraction
 

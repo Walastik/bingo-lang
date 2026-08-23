@@ -9,10 +9,9 @@ import {
   NativeSyntheticEvent,
   ListRenderItem,
 } from 'react-native';
-import { BingoCard } from '../utils/bingoUtils';
-import { WinPattern } from '../utils/winPatterns';
-import { useTheme } from '../theme/ThemeContext';
-import { ThemeColors } from '../theme/colors';
+import { BingoCard, WinPattern } from '@/game/types';
+import { useTheme } from '@/theme/ThemeContext';
+import { ThemeColors } from '@/theme/colors';
 import BingoCardView from './BingoCardView';
 
 interface BingoCardCarouselProps {

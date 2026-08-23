@@ -8,12 +8,14 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getBallColor } from '../utils/bingoUtils';
-import { useTheme } from '../theme/ThemeContext';
-import { ThemeColors } from '../theme/colors';
+import { getBallColor } from '@/game/ballFormat';
+import { BALLS_PER_COLUMN, COLUMN_LETTERS, TOTAL_BALLS } from '@/game/constants';
+import { useTheme } from '@/theme/ThemeContext';
+import { ThemeColors } from '@/theme/colors';
 
-const BINGO_LETTERS = ['B', 'I', 'N', 'G', 'O'] as const;
-const COLUMN_STARTS = [1, 16, 31, 46, 61];
+const COLUMN_STARTS = COLUMN_LETTERS.map(
+  (_, index) => index * BALLS_PER_COLUMN + 1,
+);
 
 interface CalledBallsBoardProps {
   calledBalls: number[];
@@ -132,7 +134,7 @@ const CalledBallsBoard = ({
         <View>
           <Text style={styles.title}>Called Balls</Text>
           <Text style={styles.subtitle}>
-            {calledCount} of 75 called
+            {calledCount} of {TOTAL_BALLS} called
           </Text>
         </View>
         {onClose && (
@@ -154,7 +156,7 @@ const CalledBallsBoard = ({
       >
         <View style={styles.table}>
           <View style={styles.headerRow}>
-            {BINGO_LETTERS.map((letter) => (
+            {COLUMN_LETTERS.map((letter) => (
               <View key={letter} style={styles.headerCell}>
                 <Text style={[styles.headerLetter, { color: getBallColor(letter) }]}>
                   {letter}
@@ -163,7 +165,7 @@ const CalledBallsBoard = ({
             ))}
           </View>
 
-          {Array.from({ length: 15 }, (_, rowIndex) => (
+          {Array.from({ length: BALLS_PER_COLUMN }, (_, rowIndex) => (
             <View key={rowIndex} style={styles.dataRow}>
               {COLUMN_STARTS.map((start, colIndex) => {
                 const ball = start + rowIndex;
@@ -171,7 +173,7 @@ const CalledBallsBoard = ({
 
                 return (
                   <View
-                    key={`${BINGO_LETTERS[colIndex]}-${ball}`}
+                    key={`${COLUMN_LETTERS[colIndex]}-${ball}`}
                     style={[
                       styles.ballCell,
                       isCalled

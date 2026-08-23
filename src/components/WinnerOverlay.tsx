@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { WinResult } from '../hooks/useBingoGame';
-import { useTheme } from '../theme/ThemeContext';
-import { ThemeColors } from '../theme/colors';
+import { WinResult } from '@/game/types';
+import { useTheme } from '@/theme/ThemeContext';
+import { ThemeColors } from '@/theme/colors';
 import WinningCardView from './WinningCardView';
 
 type WinnerGameState = 'roundWon' | 'gameWon' | 'npcWon' | 'invalidBingo';

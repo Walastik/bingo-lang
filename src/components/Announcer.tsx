@@ -8,8 +8,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useTheme } from '../theme/ThemeContext';
-import { ThemeColors } from '../theme/colors';
+import { useTheme } from '@/theme/ThemeContext';
+import { ThemeColors } from '@/theme/colors';
 import BingoBall from './BingoBall';
 
 interface AnnouncerProps {

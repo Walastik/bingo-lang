@@ -11,16 +11,18 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import useBingoGame, { GameSpeed } from './src/hooks/useBingoGame';
-import BingoCardCarousel from './src/components/BingoCardCarousel';
-import Announcer from './src/components/Announcer';
-import CalledBallsBoard from './src/components/CalledBallsBoard';
-import DeclareWinnerModal from './src/components/DeclareWinnerModal';
-import GameSettingsModal from './src/components/GameSettingsModal';
-import WinnerOverlay from './src/components/WinnerOverlay';
-import { ROUND_SEQUENCE, buildPreviewPatterns, getRoundConfig } from './src/utils/winPatterns';
-import { useTheme } from './src/theme/ThemeContext';
-import { ThemeColors } from './src/theme/colors';
+import useBingoGame from '@/hooks/useBingoGame';
+import BingoCardCarousel from '@/components/BingoCardCarousel';
+import Announcer from '@/components/Announcer';
+import CalledBallsBoard from '@/components/CalledBallsBoard';
+import DeclareWinnerModal from '@/components/DeclareWinnerModal';
+import GameSettingsModal from '@/components/GameSettingsModal';
+import WinnerOverlay from '@/components/WinnerOverlay';
+import { buildPreviewPatterns } from '@/game/patterns/previewPatterns';
+import { ROUND_SEQUENCE, getRoundConfig } from '@/game/patterns/roundConfigs';
+import { GameSpeed } from '@/game/speed';
+import { useTheme } from '@/theme/ThemeContext';
+import { ThemeColors } from '@/theme/colors';
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({

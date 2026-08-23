@@ -1,34 +1,14 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { generateCard, generateDeck } from '@/game/card';
+import { getRoundsForGame } from '@/game/patterns/roundConfigs';
+import { sortCardIndicesByProximity } from '@/game/proximity';
 import {
-  BingoCard,
-  generateCard,
-  generateDeck,
-  checkWin,
-  findWinningCard,
-  sortCardIndicesByProximity,
-  WinningCardResult,
-} from '../utils/bingoUtils';
-import { getRoundsForGame, RoundConfig } from '../utils/winPatterns';
-
-type GameState =
-  | 'lobby'
-  | 'playing'
-  | 'roundWon'
-  | 'gameWon'
-  | 'npcWon'
-  | 'invalidBingo';
-
-export const GAME_SPEED_OPTIONS = [0.25, 0.5, 1, 2, 3] as const;
-export type GameSpeed = (typeof GAME_SPEED_OPTIONS)[number];
-
-const BALL_DRAW_INTERVAL_MS = 5000;
-const UPCOMING_BALL_REVEAL_RATIO = 0.25;
-
-const getBallDrawIntervalMs = (speed: GameSpeed) => BALL_DRAW_INTERVAL_MS / speed;
-const getUpcomingBallRevealDelayMs = (speed: GameSpeed) =>
-  getBallDrawIntervalMs(speed) * UPCOMING_BALL_REVEAL_RATIO;
-
-export type WinResult = WinningCardResult & { isNpc: boolean };
+  GameSpeed,
+  getBallDrawIntervalMs,
+  getUpcomingBallRevealDelayMs,
+} from '@/game/speed';
+import { BingoCard, GameState, RoundConfig, WinResult } from '@/game/types';
+import { checkWin, findWinningCard } from '@/game/winCheck';
 
 interface UseBingoGameParams {
   userCardCount: number;

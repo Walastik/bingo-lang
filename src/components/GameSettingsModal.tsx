@@ -6,9 +6,9 @@ import {
   Text,
   View,
 } from 'react-native';
-import { GameSpeed, GAME_SPEED_OPTIONS } from '../hooks/useBingoGame';
-import { useTheme } from '../theme/ThemeContext';
-import { ThemeColors } from '../theme/colors';
+import { GameSpeed, GAME_SPEED_OPTIONS } from '@/game/speed';
+import { useTheme } from '@/theme/ThemeContext';
+import { ThemeColors } from '@/theme/colors';
 
 interface GameSettingsModalProps {
   visible: boolean;

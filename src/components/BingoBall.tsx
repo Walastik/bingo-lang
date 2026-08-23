@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { getBallString, getBallColor } from '../utils/bingoUtils';
+import { getBallString, getBallColor } from '@/game/ballFormat';
 
 interface BingoBallProps {
   value: number;

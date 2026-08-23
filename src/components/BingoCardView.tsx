@@ -5,17 +5,13 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import { getBallColor } from '../utils/bingoUtils';
-import { WinPattern } from '../utils/winPatterns';
-import { useTheme } from '../theme/ThemeContext';
-import { ThemeColors } from '../theme/colors';
+import { getBallColor } from '@/game/ballFormat';
+import { BingoCard, WinPattern } from '@/game/types';
+import { useTheme } from '@/theme/ThemeContext';
+import { ThemeColors } from '@/theme/colors';
 
 const GRID_GAP = 4;
 const GRID_COLUMNS = 5;
-
-interface BingoCard {
-  grid: (number | 'FREE')[];
-}
 
 interface BingoCardViewProps {
   card: BingoCard;

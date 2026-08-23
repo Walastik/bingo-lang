@@ -5,10 +5,10 @@ import {
   Text,
   View,
 } from 'react-native';
-import { BingoCard, getBallColor } from '../utils/bingoUtils';
-import { CellCoord } from '../utils/winPatterns';
-import { useTheme } from '../theme/ThemeContext';
-import { ThemeColors } from '../theme/colors';
+import { getBallColor } from '@/game/ballFormat';
+import { BingoCard, CellCoord } from '@/game/types';
+import { useTheme } from '@/theme/ThemeContext';
+import { ThemeColors } from '@/theme/colors';
 
 const GRID_GAP = 4;
 const GRID_COLUMNS = 5;
