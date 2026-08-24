@@ -3,13 +3,18 @@ import { registerRootComponent } from 'expo';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import App from './App';
+import { GameProvider } from '@/state/GameContext';
 import { ThemeProvider } from '@/theme/ThemeContext';
 
 function Root() {
   return React.createElement(
     SafeAreaProvider,
     null,
-    React.createElement(ThemeProvider, null, React.createElement(App)),
+    React.createElement(
+      ThemeProvider,
+      null,
+      React.createElement(GameProvider, null, React.createElement(App)),
+    ),
   );
 }
 

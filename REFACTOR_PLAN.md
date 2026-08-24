@@ -153,15 +153,30 @@ Two deliberate behavior changes, both in paths the old code could reach but neve
 `src/screens/LobbyScreen/` and `src/screens/GameScreen/` already hold each screen's styles; this
 phase moves the matching JSX in beside them and `App.tsx` stops importing both.
 
-- [ ] `useLobbyConfig.ts` — card count, caller-only, round selection + "keep one round" guard
-- [ ] `state/GameProvider.tsx` + `useGameContext.ts` — composes lobby config and game state into
-      one memoized context, replacing a ~20-value prop drill
-- [ ] Wrap `<App />` in `<GameProvider>` inside `index.ts`
-- [ ] `LobbyScreen/` → `ModeSelector`, `CardCountSelector`, `RoundLineupList`, `AppearanceSection`
-- [ ] `GameScreen/` → `useGameScreenModals.ts` (modal state, pause coupling, quit alert),
+- [x] `useLobbyConfig.ts` — card count, caller-only, round selection + "keep one round" guard
+- [x] `state/GameContext.tsx` — provider and hook in one file, following `ThemeContext.tsx`, rather
+      than the planned two. The value type is `ReturnType` of the two hooks intersected, so adding
+      a field reaches the screens without a second declaration to keep in step.
+- [x] Wrap `<App />` in `<GameProvider>` inside `index.ts`
+- [x] `LobbyScreen/` → `ModeSelector`, `CardCountSelector`, `RoundLineupList`, `AppearanceSection`
+- [x] `GameScreen/` → `useGameScreenModals.ts` (modal state, pause coupling, quit alert),
       `GameHeader.tsx`, `BingoButton.tsx`
-- [ ] Fix `previewPatterns` memo: it reads `currentRound` but depends only on `currentRound.type`
-- [ ] `App.tsx` → routes lobby vs game only
+- [x] Fix `previewPatterns` memo: it read `currentRound` but depended only on `currentRound.type`.
+      Depends on `currentRound` now, whose identity is already stable per round.
+- [x] `App.tsx` → routes lobby vs game only, 11 lines
+
+The context value is **not** memoized, against the plan. Every field on it is state owned by the
+provider, so a re-render there always means the value changed, and `children` comes from `Root`,
+which never re-renders — a `useMemo` would look like it was earning something while never hitting.
+The real win is that modal state moved into `GameScreen`, so opening settings no longer re-renders
+the provider and every screen under it.
+
+`AppearanceSection` reads `useTheme()` instead of taking props, the one exception to the
+leaf-takes-props convention: the theme is its whole subject, and `Switch` needs a color that no
+style prop carries.
+
+Verified beyond `tsc`: all 42 style keys the old `App.tsx` referenced are still referenced, and all
+55 JSX props it passed are still passed. Metro bundles the new graph at 670 modules.
 
 ## Phase 6 — Final verification
 
