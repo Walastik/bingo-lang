@@ -115,16 +115,38 @@ Largest file in `src/components/` is now 171 lines (`useBallTransition.ts`), dow
 Do last among code splits. Key seam: `useBallCaller` owns drawing/scheduling and knows nothing
 about winning — it asks its owner via `onBallDrawn(ball, drawnSet) => 'continue' | 'stop'`.
 
-- [ ] `useLatestRef.ts` — replaces 8 hand-written ref-sync effects
-- [ ] `useCardSet.ts` — user/NPC cards, refs, `generateFreshCards`
-- [ ] `useRoundProgression.ts` — round list, index, `advanceRound`, `resetRounds`, `isFinalRound`
-- [ ] `useDaubs.ts` — daub set, column auto-daub, auto mode
-- [ ] `useBallCaller.ts` — deck, draw timer, upcoming-ball reveal, pause/resume, speed scaling
-- [ ] `useWinDetection.ts` — `winResult`, `recordUserWin`, `recordNpcWin`, `evaluateUserBingo`
-- [ ] `useBingoGame.ts` — owns `gameState` only; composes the five hooks
-- [ ] Return the **exact same object shape** (minus unused `npcCards`) so `App.tsx` compiles
-      untouched — that's the proof the split is faithful
+- [x] `useLatestRef.ts` — replaces 5 of the 8 ref-sync effects (`gameState`, `currentRound`,
+      round count, user cards, NPC cards). The other three — `isPaused`, `isAutoMode`, `gameSpeed` —
+      and the round index keep writing their ref at the mutation site, because each is read again
+      in the same tick that sets it. Doing those through an effect would break pause/resume.
+- [x] `useCardSet.ts` — user/NPC cards, refs, `generateFreshCards`
+- [x] `useRoundProgression.ts` — round list, index, `advanceRound`, `resetRounds`, `isFinalRound`
+- [x] `useDaubs.ts` — daub set, column auto-daub, auto mode. Takes the called balls as an
+      argument instead of reading the caller's ref, which is what keeps the hooks acyclic:
+      `useBallCaller` needs `onBallDrawn`, so it has to be created after everything it notifies.
+- [x] `usePausableTimeout.ts` — not in the original plan. The draw timer and the reveal timer had
+      the same 30 lines of clear/hold/rescale plumbing twice over; one primitive holds it now, and
+      `useBallCaller` came in over budget without it.
+- [x] `useBallCaller.ts` — deck, draw loop, upcoming-ball reveal, pause/resume, speed scaling
+- [x] `useWinDetection.ts` — `winResult`, `recordUserWin`, `recordNpcWin`, `userHasBingo`,
+      `npcHasWon`. `callBingo` had its own inline copy of the per-card daub extraction; both now
+      go through `getUserDaubsForCard`.
+- [x] `useGameFlow.ts` — the state machine: every lobby/play/win transition. Split out of the
+      composer, which was 304 lines with them inlined.
+- [x] `useBingoGame.ts` — owns `gameState` only; composes the six hooks
+- [x] Returns the same object shape minus unused `npcCards`. `App.tsx` is untouched and `tsc`
+      passes, and it is the hook's only consumer — that is the proof the split is faithful.
 - [ ] Full manual QA pass
+
+Two deliberate behavior changes, both in paths the old code could reach but never acted on:
+
+- A win now stops the loop synchronously via the `'stop'` verdict. The old code re-read
+  `gameStateRef` right after drawing, but that ref updates in an effect, so it still scheduled one
+  more timer that then bailed out on its own guard. Same outcome, one less orphaned timer.
+- `pause()` with no draw timer pending now discards the stale remainder instead of keeping it.
+  Unreachable while playing, since every tick schedules the next before returning.
+
+`useBingoGame` is 177 lines, down from 621. Largest piece is `useBallCaller` at 215.
 
 ## Phase 5 — Split `App.tsx` into screens
 
