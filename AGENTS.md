@@ -29,6 +29,10 @@ value, and there is no UI test coverage. Diff the property lines against the pre
   The `index.ts` is a one-line re-export, so `@/components/Announcer` keeps working when the
   component is split further.
 - Screens read shared state from `useGameContext()`. Leaf/presentational components take props.
+- `useLatestRef` is for values a long-lived callback reads later, like the draw timer's. When the
+  tick that sets the state also reads the ref — `isPaused`, `isAutoMode`, `gameSpeed`, the round
+  index — write the ref at the mutation site instead. An effect runs a render too late, and
+  pause/resume breaks quietly.
 - Styles are theme-derived: always `useMemo(() => createStyles(colors), [colors])`.
 - Subcomponents take the parent's stylesheet as a prop (`styles: AnnouncerStyles`) instead of
   calling `createStyles` themselves; a 25-cell grid would otherwise build 25 stylesheets. That is
