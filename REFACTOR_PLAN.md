@@ -57,24 +57,45 @@ whether missed daubs should push a card down the order before removing the param
 
 Mechanical: `createStyles(colors)` → `<Component>.styles.ts`, call site unchanged.
 
-- [ ] `Announcer` — extract `announcerLayout.ts` constants first (styles and the animation hook
-      both need them; a direct import would be circular). 559 → ~400
-- [ ] `WinningCardView` 314 → ~230 (under budget)
-- [ ] `BingoCardView` 297 → ~205 (under budget)
-- [ ] `BingoCardCarousel` 261 → ~200 (under budget)
-- [ ] `App.tsx` — lobby styles → `LobbyScreen.styles.ts`, game styles → `GameScreen.styles.ts`,
-      shared container → `src/theme/screenStyles.ts`. 687 → ~420
-- [ ] `CalledBallsBoard`, `GameSettingsModal`, `WinnerOverlay` — for consistency
-- [ ] Verify light **and** dark mode render correctly (theme bugs are invisible to `tsc`)
+- [x] Every component moved into its own folder (`Announcer/Announcer.tsx` + `index.ts` re-export)
+      rather than leaving `<Component>.styles.ts` as a flat sibling. Phase 3 splits these same
+      components, so this is the destination either way, and the `index.ts` keeps the import
+      specifier (`@/components/Announcer`) identical — **no call site changed at all.**
+- [x] `Announcer` — `announcerLayout.ts` extracted first (both the styles and Phase 3's animation
+      hook need the constants; a direct import between them would be circular). 559 → 400
+- [x] `WinningCardView` 314 → 230, `BingoCardView` 297 → 197, `BingoCardCarousel` 261 → 189
+- [x] `App.tsx` — lobby styles → `LobbyScreen.styles.ts`, game styles → `GameScreen.styles.ts`,
+      shared container → `src/theme/screenStyles.ts`. 689 → 441
+- [x] `CalledBallsBoard`, `GameSettingsModal`, `WinnerOverlay`, `DeclareWinnerModal` — for
+      consistency, so "styles live in `.styles.ts`" holds with no exceptions
+- [x] `BingoBall` left flat: its styles are static rather than theme-derived, and it is 66 lines
+- [x] Verified every moved declaration is byte-identical to the previous commit, by extracting and
+      diffing the property lines mechanically. This is what rules out theme bugs; `tsc` catches a
+      dropped *key* but never a mistyped *value*, and there is no UI test coverage.
+- [ ] Still worth a visual pass in light **and** dark mode
+
+### Deduplication that fell out of it
+
+- `cardGridLayout.ts` — `GRID_GAP` and `getCellSize` were duplicated in both card views. The gap is
+  needed by the styles *and* the component, so it had to be shared rather than file-local.
+- `BALL_SIZES` now comes from `BingoBall`, which owns the rendered diameter. `Announcer` previously
+  hardcoded matching `120`/`50` in its slide math, where a change to the ball would have silently
+  desynced the animation. Direction matters: the layout depends on the ball, not the reverse.
+- `MAX_RECENT_BALLS` replaces four separate `3`s (slice, width, shift guard, count label).
+- `SECTION_MAX_WIDTH` replaces six `maxWidth: 360`s that must agree for the lobby to line up.
+- `App.tsx` picked up `TOTAL_BALLS` and a new `fromFlatIndex`, replacing a hardcoded `75` and a
+  hand-rolled `flatIndex / 5` — both of which `AGENTS.md` had just forbidden.
 
 ## Phase 3 — Component decomposition
 
+Folders and the shared-layout module now exist, so each item is additive.
+
 - [ ] `Announcer/` → `useBallTransition.ts`, `AnnouncerControls.tsx`, `CurrentBallStage.tsx`,
-      `RecentBallsRow.tsx`, `CalledBallsSummary.tsx`
+      `RecentBallsRow.tsx` (already an inner component, just move it), `CalledBallsSummary.tsx`
 - [ ] `BingoCardView/` → `useWinPreview.ts`, `BingoCardCell.tsx`
 - [ ] `WinningCardView/` → `useWinCardAnimation.ts`, `WinningCardCell.tsx`
 - [ ] `CardHeaderRow.tsx` — one shared B-I-N-G-O header (dedupes both card views)
-- [ ] `useGridCellSize.ts` — one shared `onLayout` → `cellSize` hook (dedupes both card views)
+- [ ] `useGridCellSize.ts` — shared `onLayout` → `cellSize` hook, wrapping `getCellSize`
 - [ ] `BingoCardCarousel/` → `useCarouselPaging.ts`, `CarouselControls.tsx`
 - [ ] `WinnerOverlay/winnerCopy.ts` — pure title/message/ownerLabel functions
 - [ ] `CalledBallsBoard/BallGrid.tsx` — the 15×5 grid
@@ -96,6 +117,9 @@ about winning — it asks its owner via `onBallDrawn(ball, drawnSet) => 'continu
 - [ ] Full manual QA pass
 
 ## Phase 5 — Split `App.tsx` into screens
+
+`src/screens/LobbyScreen/` and `src/screens/GameScreen/` already hold each screen's styles; this
+phase moves the matching JSX in beside them and `App.tsx` stops importing both.
 
 - [ ] `useLobbyConfig.ts` — card count, caller-only, round selection + "keep one round" guard
 - [ ] `state/GameProvider.tsx` + `useGameContext.ts` — composes lobby config and game state into

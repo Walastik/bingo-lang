@@ -4,15 +4,14 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  StyleSheet,
   NativeScrollEvent,
   NativeSyntheticEvent,
   ListRenderItem,
 } from 'react-native';
+import BingoCardView from '@/components/BingoCardView';
 import { BingoCard, WinPattern } from '@/game/types';
 import { useTheme } from '@/theme/ThemeContext';
-import { ThemeColors } from '@/theme/colors';
-import BingoCardView from './BingoCardView';
+import { createStyles } from './BingoCardCarousel.styles';
 
 interface BingoCardCarouselProps {
   cards: BingoCard[];
@@ -23,72 +22,6 @@ interface BingoCardCarouselProps {
   previewKey: string;
   onCellPress: (displayIndex: number, flatIndex: number) => void;
   onHeaderPress: (displayIndex: number, col: number) => void;
-}
-
-function createStyles(colors: ThemeColors) {
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-    singleCardContainer: {
-      flex: 1,
-      width: '100%',
-    },
-    list: {
-      flex: 1,
-    },
-    page: {
-      width: '100%',
-      paddingBottom: 6,
-    },
-    controls: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 12,
-      marginTop: 10,
-      paddingTop: 4,
-      paddingBottom: 4,
-    },
-    arrowButton: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: colors.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1,
-      borderColor: colors.border,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.08,
-      shadowRadius: 2,
-      elevation: 2,
-    },
-    arrowButtonDisabled: {
-      backgroundColor: colors.surfaceMuted,
-      borderColor: colors.borderLight,
-      shadowOpacity: 0,
-      elevation: 0,
-    },
-    arrowText: {
-      fontSize: 24,
-      lineHeight: 26,
-      fontWeight: '600',
-      color: '#007AFF',
-      marginTop: -1,
-    },
-    arrowTextDisabled: {
-      color: colors.textMuted,
-    },
-    pageIndicator: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: colors.textSecondary,
-      minWidth: 100,
-      textAlign: 'center',
-    },
-  });
 }
 
 const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
@@ -103,14 +36,12 @@ const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const resolvedCardIndices =
-    cardIndices ?? cards.map((_, index) => index);
+  const resolvedCardIndices = cardIndices ?? cards.map((_, index) => index);
   const listRef = useRef<FlatList<BingoCard>>(null);
   const [pageWidth, setPageWidth] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const cardCount = cards.length;
-  const showCarouselControls = cardCount > 1;
 
   useEffect(() => {
     setActiveIndex(0);
@@ -159,7 +90,16 @@ const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
         />
       </View>
     ),
-    [onCellPress, onHeaderPress, pageWidth, previewKey, resolvedCardIndices, styles.page, userDaubs, winPatterns],
+    [
+      onCellPress,
+      onHeaderPress,
+      pageWidth,
+      previewKey,
+      resolvedCardIndices,
+      styles.page,
+      userDaubs,
+      winPatterns,
+    ],
   );
 
   if (cardCount === 0) {
@@ -181,6 +121,9 @@ const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
       </View>
     );
   }
+
+  const isFirst = activeIndex === 0;
+  const isLast = activeIndex === cardCount - 1;
 
   return (
     <View
@@ -215,14 +158,14 @@ const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
 
       <View style={styles.controls}>
         <TouchableOpacity
-          style={[styles.arrowButton, activeIndex === 0 && styles.arrowButtonDisabled]}
+          style={[styles.arrowButton, isFirst && styles.arrowButtonDisabled]}
           onPress={() => goToIndex(activeIndex - 1)}
-          disabled={activeIndex === 0}
+          disabled={isFirst}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel="Previous card"
         >
-          <Text style={[styles.arrowText, activeIndex === 0 && styles.arrowTextDisabled]}>
+          <Text style={[styles.arrowText, isFirst && styles.arrowTextDisabled]}>
             ‹
           </Text>
         </TouchableOpacity>
@@ -232,22 +175,14 @@ const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
         </Text>
 
         <TouchableOpacity
-          style={[
-            styles.arrowButton,
-            activeIndex === cardCount - 1 && styles.arrowButtonDisabled,
-          ]}
+          style={[styles.arrowButton, isLast && styles.arrowButtonDisabled]}
           onPress={() => goToIndex(activeIndex + 1)}
-          disabled={activeIndex === cardCount - 1}
+          disabled={isLast}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel="Next card"
         >
-          <Text
-            style={[
-              styles.arrowText,
-              activeIndex === cardCount - 1 && styles.arrowTextDisabled,
-            ]}
-          >
+          <Text style={[styles.arrowText, isLast && styles.arrowTextDisabled]}>
             ›
           </Text>
         </TouchableOpacity>

@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   Alert,
-  StyleSheet,
   Text,
   View,
   TouchableOpacity,
@@ -18,287 +17,20 @@ import CalledBallsBoard from '@/components/CalledBallsBoard';
 import DeclareWinnerModal from '@/components/DeclareWinnerModal';
 import GameSettingsModal from '@/components/GameSettingsModal';
 import WinnerOverlay from '@/components/WinnerOverlay';
+import { TOTAL_BALLS, fromFlatIndex } from '@/game/constants';
 import { buildPreviewPatterns } from '@/game/patterns/previewPatterns';
 import { ROUND_SEQUENCE, getRoundConfig } from '@/game/patterns/roundConfigs';
 import { GameSpeed } from '@/game/speed';
+import { createStyles as createGameStyles } from '@/screens/GameScreen/GameScreen.styles';
+import { createStyles as createLobbyStyles } from '@/screens/LobbyScreen/LobbyScreen.styles';
 import { useTheme } from '@/theme/ThemeContext';
-import { ThemeColors } from '@/theme/colors';
-
-function createStyles(colors: ThemeColors) {
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    gameHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: 12,
-      paddingBottom: 4,
-    },
-    roundInfo: {
-      flex: 1,
-      paddingRight: 8,
-    },
-    roundInfoLabel: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: colors.textSecondary,
-      textTransform: 'uppercase',
-      letterSpacing: 0.4,
-    },
-    roundInfoName: {
-      fontSize: 17,
-      fontWeight: '700',
-      color: colors.text,
-      marginTop: 2,
-    },
-    settingsButton: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      backgroundColor: colors.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.12,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    settingsIcon: {
-      fontSize: 24,
-      color: colors.text,
-      lineHeight: 28,
-    },
-    lobbyScrollContent: {
-      flexGrow: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 20,
-      paddingVertical: 32,
-    },
-    title: {
-      fontSize: 32,
-      fontWeight: 'bold',
-      color: colors.text,
-      marginBottom: 24,
-    },
-    subtitle: {
-      fontSize: 18,
-      color: colors.textSecondary,
-      marginBottom: 14,
-      alignSelf: 'flex-start',
-      width: '100%',
-      maxWidth: 360,
-    },
-    modeContainer: {
-      flexDirection: 'row',
-      gap: 12,
-      width: '100%',
-      maxWidth: 360,
-      marginBottom: 28,
-    },
-    modeButton: {
-      flex: 1,
-      paddingVertical: 14,
-      paddingHorizontal: 12,
-      borderRadius: 12,
-      backgroundColor: colors.surfaceMuted,
-      alignItems: 'center',
-    },
-    modeButtonActive: {
-      backgroundColor: '#007AFF',
-    },
-    modeButtonText: {
-      color: colors.text,
-      fontSize: 16,
-      fontWeight: '700',
-    },
-    modeButtonTextActive: {
-      color: '#fff',
-    },
-    selectionContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 12,
-      marginBottom: 28,
-      justifyContent: 'center',
-      width: '100%',
-      maxWidth: 360,
-    },
-    selectionButton: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      backgroundColor: colors.surfaceMuted,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    selectionButtonActive: {
-      backgroundColor: '#007AFF',
-    },
-    selectionText: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: '#fff',
-    },
-    roundLineupHint: {
-      fontSize: 14,
-      color: colors.textMuted,
-      marginBottom: 12,
-      alignSelf: 'flex-start',
-      width: '100%',
-      maxWidth: 360,
-    },
-    roundLineup: {
-      width: '100%',
-      maxWidth: 360,
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      padding: 8,
-      marginBottom: 28,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 6,
-      elevation: 3,
-    },
-    roundLineupRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: 12,
-      paddingVertical: 14,
-      paddingHorizontal: 12,
-      borderRadius: 12,
-    },
-    roundLineupRowOff: {
-      opacity: 0.55,
-    },
-    roundCheckbox: {
-      width: 26,
-      height: 26,
-      borderRadius: 7,
-      borderWidth: 2,
-      borderColor: colors.border,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginTop: 2,
-      backgroundColor: colors.surface,
-    },
-    roundCheckboxSelected: {
-      backgroundColor: '#007AFF',
-      borderColor: '#007AFF',
-    },
-    roundCheckboxMark: {
-      color: '#fff',
-      fontSize: 15,
-      fontWeight: '800',
-      lineHeight: 17,
-    },
-    roundLineupText: {
-      flex: 1,
-    },
-    roundLineupLabel: {
-      fontSize: 17,
-      fontWeight: '700',
-      color: colors.text,
-      marginBottom: 4,
-    },
-    roundLineupLabelOff: {
-      color: colors.textSecondary,
-    },
-    roundLineupDescription: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      lineHeight: 20,
-    },
-    roundLineupDescriptionOff: {
-      color: colors.textMuted,
-    },
-    appearanceSection: {
-      width: '100%',
-      maxWidth: 360,
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      padding: 16,
-      marginBottom: 28,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 6,
-      elevation: 3,
-    },
-    appearanceRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    appearanceLabel: {
-      fontSize: 17,
-      fontWeight: '600',
-      color: colors.text,
-    },
-    appearanceHint: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      marginTop: 4,
-    },
-    startButton: {
-      backgroundColor: '#34C759',
-      paddingVertical: 15,
-      paddingHorizontal: 40,
-      borderRadius: 12,
-    },
-    startButtonDisabled: {
-      backgroundColor: '#a8ddb4',
-    },
-    startButtonText: {
-      color: '#fff',
-      fontSize: 18,
-      fontWeight: 'bold',
-    },
-    cardsContainer: {
-      flex: 1,
-      paddingHorizontal: 10,
-      paddingTop: 10,
-      paddingBottom: 100,
-    },
-    callerBoardContainer: {
-      paddingBottom: 10,
-    },
-    floatingButtonContainer: {
-      position: 'absolute',
-      bottom: 30,
-      left: 0,
-      right: 0,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    bingoButton: {
-      backgroundColor: '#FF3B30',
-      paddingVertical: 20,
-      paddingHorizontal: 60,
-      borderRadius: 50,
-      shadowColor: '#FF3B30',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.4,
-      shadowRadius: 8,
-      elevation: 8,
-    },
-    bingoButtonText: {
-      color: '#fff',
-      fontSize: 28,
-      fontWeight: '900',
-      letterSpacing: 2,
-    },
-  });
-}
+import { createScreenStyles } from '@/theme/screenStyles';
 
 export default function App() {
   const { colors, isDarkMode, setDarkMode } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const screenStyles = useMemo(() => createScreenStyles(colors), [colors]);
+  const lobbyStyles = useMemo(() => createLobbyStyles(colors), [colors]);
+  const gameStyles = useMemo(() => createGameStyles(colors), [colors]);
 
   const [selectedCardCount, setSelectedCardCount] = useState<number>(1);
   const [isCallerOnly, setIsCallerOnly] = useState(false);
@@ -423,36 +155,48 @@ export default function App() {
   // --- RENDER: LOBBY ---
   if (gameState === 'lobby') {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={screenStyles.container}>
         <StatusBar barStyle={colors.statusBarStyle} />
         <ScrollView
-          contentContainerStyle={styles.lobbyScrollContent}
+          contentContainerStyle={lobbyStyles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.title}>Bingo Lang!</Text>
+          <Text style={lobbyStyles.title}>Bingo Lang!</Text>
 
-          <Text style={styles.subtitle}>Mode</Text>
-          <View style={styles.modeContainer}>
+          <Text style={lobbyStyles.subtitle}>Mode</Text>
+          <View style={lobbyStyles.modeContainer}>
             <TouchableOpacity
-              style={[styles.modeButton, !isCallerOnly && styles.modeButtonActive]}
+              style={[
+                lobbyStyles.modeButton,
+                !isCallerOnly && lobbyStyles.modeButtonActive,
+              ]}
               onPress={() => setIsCallerOnly(false)}
               accessibilityRole="button"
               accessibilityState={{ selected: !isCallerOnly }}
             >
               <Text
-                style={[styles.modeButtonText, !isCallerOnly && styles.modeButtonTextActive]}
+                style={[
+                  lobbyStyles.modeButtonText,
+                  !isCallerOnly && lobbyStyles.modeButtonTextActive,
+                ]}
               >
                 Play Bingo
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.modeButton, isCallerOnly && styles.modeButtonActive]}
+              style={[
+                lobbyStyles.modeButton,
+                isCallerOnly && lobbyStyles.modeButtonActive,
+              ]}
               onPress={() => setIsCallerOnly(true)}
               accessibilityRole="button"
               accessibilityState={{ selected: isCallerOnly }}
             >
               <Text
-                style={[styles.modeButtonText, isCallerOnly && styles.modeButtonTextActive]}
+                style={[
+                  lobbyStyles.modeButtonText,
+                  isCallerOnly && lobbyStyles.modeButtonTextActive,
+                ]}
               >
                 Caller Only
               </Text>
@@ -461,27 +205,29 @@ export default function App() {
 
           {!isCallerOnly && (
             <>
-              <Text style={styles.subtitle}>Cards</Text>
-              <View style={styles.selectionContainer}>
+              <Text style={lobbyStyles.subtitle}>Cards</Text>
+              <View style={lobbyStyles.selectionContainer}>
                 {[1, 2, 3, 4].map((num) => (
                   <TouchableOpacity
                     key={num}
                     style={[
-                      styles.selectionButton,
-                      selectedCardCount === num && styles.selectionButtonActive,
+                      lobbyStyles.selectionButton,
+                      selectedCardCount === num && lobbyStyles.selectionButtonActive,
                     ]}
                     onPress={() => setSelectedCardCount(num)}
                   >
-                    <Text style={styles.selectionText}>{num}</Text>
+                    <Text style={lobbyStyles.selectionText}>{num}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </>
           )}
 
-          <Text style={styles.subtitle}>Round lineup</Text>
-          <Text style={styles.roundLineupHint}>Tap a game to include or exclude it.</Text>
-          <View style={styles.roundLineup}>
+          <Text style={lobbyStyles.subtitle}>Round lineup</Text>
+          <Text style={lobbyStyles.roundLineupHint}>
+            Tap a game to include or exclude it.
+          </Text>
+          <View style={lobbyStyles.roundLineup}>
             {ROUND_SEQUENCE.map((roundType, index) => {
               const round = getRoundConfig(roundType);
               const isSelected = selectedRounds[index];
@@ -489,7 +235,10 @@ export default function App() {
               return (
                 <TouchableOpacity
                   key={roundType}
-                  style={[styles.roundLineupRow, !isSelected && styles.roundLineupRowOff]}
+                  style={[
+                    lobbyStyles.roundLineupRow,
+                    !isSelected && lobbyStyles.roundLineupRowOff,
+                  ]}
                   onPress={() => toggleRoundSelection(index)}
                   activeOpacity={0.7}
                   accessibilityRole="checkbox"
@@ -498,25 +247,27 @@ export default function App() {
                 >
                   <View
                     style={[
-                      styles.roundCheckbox,
-                      isSelected && styles.roundCheckboxSelected,
+                      lobbyStyles.roundCheckbox,
+                      isSelected && lobbyStyles.roundCheckboxSelected,
                     ]}
                   >
-                    {isSelected && <Text style={styles.roundCheckboxMark}>✓</Text>}
+                    {isSelected && (
+                      <Text style={lobbyStyles.roundCheckboxMark}>✓</Text>
+                    )}
                   </View>
-                  <View style={styles.roundLineupText}>
+                  <View style={lobbyStyles.roundLineupText}>
                     <Text
                       style={[
-                        styles.roundLineupLabel,
-                        !isSelected && styles.roundLineupLabelOff,
+                        lobbyStyles.roundLineupLabel,
+                        !isSelected && lobbyStyles.roundLineupLabelOff,
                       ]}
                     >
                       {round.label}
                     </Text>
                     <Text
                       style={[
-                        styles.roundLineupDescription,
-                        !isSelected && styles.roundLineupDescriptionOff,
+                        lobbyStyles.roundLineupDescription,
+                        !isSelected && lobbyStyles.roundLineupDescriptionOff,
                       ]}
                     >
                       {round.description}
@@ -527,12 +278,12 @@ export default function App() {
             })}
           </View>
 
-          <Text style={styles.subtitle}>Appearance</Text>
-          <View style={styles.appearanceSection}>
-            <View style={styles.appearanceRow}>
+          <Text style={lobbyStyles.subtitle}>Appearance</Text>
+          <View style={lobbyStyles.appearanceSection}>
+            <View style={lobbyStyles.appearanceRow}>
               <View>
-                <Text style={styles.appearanceLabel}>Dark Mode</Text>
-                <Text style={styles.appearanceHint}>
+                <Text style={lobbyStyles.appearanceLabel}>Dark Mode</Text>
+                <Text style={lobbyStyles.appearanceHint}>
                   {isDarkMode ? 'On' : 'Off'}
                 </Text>
               </View>
@@ -547,11 +298,14 @@ export default function App() {
           </View>
 
           <TouchableOpacity
-            style={[styles.startButton, rounds.length === 0 && styles.startButtonDisabled]}
+            style={[
+              lobbyStyles.startButton,
+              rounds.length === 0 && lobbyStyles.startButtonDisabled,
+            ]}
             onPress={startGame}
             disabled={rounds.length === 0}
           >
-            <Text style={styles.startButtonText}>
+            <Text style={lobbyStyles.startButtonText}>
               {isCallerOnly ? 'Start Calling' : 'Start Game'}
             </Text>
           </TouchableOpacity>
@@ -562,26 +316,26 @@ export default function App() {
 
   // --- RENDER: PLAYING / WIN ---
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={screenStyles.container}>
       <StatusBar barStyle={colors.statusBarStyle} />
 
       {gameState === 'playing' && (
-        <View style={styles.gameHeader}>
-          <View style={styles.roundInfo}>
-            <Text style={styles.roundInfoLabel}>
+        <View style={gameStyles.header}>
+          <View style={gameStyles.roundInfo}>
+            <Text style={gameStyles.roundInfoLabel}>
               Round {currentRoundNumber}/{totalRounds}
             </Text>
-            <Text style={styles.roundInfoName}>{currentRound.label}</Text>
+            <Text style={gameStyles.roundInfoName}>{currentRound.label}</Text>
           </View>
           <TouchableOpacity
-            style={styles.settingsButton}
+            style={gameStyles.settingsButton}
             onPress={handleOpenSettings}
             activeOpacity={0.7}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Open game settings"
           >
-            <Text style={styles.settingsIcon}>⚙️</Text>
+            <Text style={gameStyles.settingsIcon}>⚙️</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -608,7 +362,7 @@ export default function App() {
         showPauseControl={gameState === 'playing' && !isCallerOnly}
         onTogglePause={togglePause}
         showNextControl={gameState === 'playing' && isCallerOnly}
-        canCallNextBall={drawnBalls.length < 75}
+        canCallNextBall={drawnBalls.length < TOTAL_BALLS}
         onNextBall={callNextBall}
         isAutoMode={isAutoMode}
         showAutoControl={gameState === 'playing' && !isCallerOnly}
@@ -628,8 +382,8 @@ export default function App() {
 
       <View
         style={[
-          styles.cardsContainer,
-          isCallerOnly && styles.callerBoardContainer,
+          gameStyles.cardsContainer,
+          isCallerOnly && gameStyles.callerBoardContainer,
         ]}
       >
         {isCallerOnly ? (
@@ -643,10 +397,8 @@ export default function App() {
               winPatterns={previewPatterns}
               previewKey={currentRound.type}
               onCellPress={(displayIndex, flatIndex) => {
-                const cardIndex = cardOrder[displayIndex];
-                const row = Math.floor(flatIndex / 5);
-                const col = flatIndex % 5;
-                daubSpace(cardIndex, row, col);
+                const { row, col } = fromFlatIndex(flatIndex);
+                daubSpace(cardOrder[displayIndex], row, col);
               }}
               onHeaderPress={(displayIndex, col) => {
                 autoDaubColumn(cardOrder[displayIndex], col);
@@ -657,13 +409,13 @@ export default function App() {
       </View>
 
       {!isCallerOnly && (
-        <View style={styles.floatingButtonContainer}>
+        <View style={gameStyles.floatingButtonContainer}>
           <TouchableOpacity
-            style={styles.bingoButton}
+            style={gameStyles.bingoButton}
             onPress={callBingo}
             activeOpacity={0.8}
           >
-            <Text style={styles.bingoButtonText}>BINGO!</Text>
+            <Text style={gameStyles.bingoButtonText}>BINGO!</Text>
           </TouchableOpacity>
         </View>
       )}

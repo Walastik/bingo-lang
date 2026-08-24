@@ -1,3 +1,5 @@
+import { CellCoord } from './types';
+
 export const GRID_SIZE = 5;
 export const CELL_COUNT = GRID_SIZE * GRID_SIZE;
 
@@ -11,6 +13,11 @@ export const TOTAL_BALLS = COLUMN_LETTERS.length * BALLS_PER_COLUMN;
 
 /** `grid` is row-major, so a cell's array index is derived from its coordinates. */
 export const toFlatIndex = (row: number, col: number): number => row * GRID_SIZE + col;
+
+export const fromFlatIndex = (index: number): CellCoord => ({
+  row: Math.floor(index / GRID_SIZE),
+  col: index % GRID_SIZE,
+});
 
 export const isFreeSpace = (row: number, col: number): boolean =>
   row === FREE_ROW && col === FREE_COL;

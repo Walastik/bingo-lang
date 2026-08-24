@@ -9,9 +9,12 @@ readable by a local model in one pass. Enforced by `npm run lint:lines`.
 
 When a file approaches the limit, split it along these seams, in this order:
 
-1. `StyleSheet` blocks move to a sibling `<Component>.styles.ts` exporting `createStyles(colors)`.
+1. `StyleSheet` blocks move to `<Component>.styles.ts` exporting `createStyles(colors)`.
 2. Animation, timer, and effect logic moves to a `use<Thing>.ts` hook.
 3. Repeated markup moves to a subcomponent in the same folder.
+
+Moving styles is the one refactor `tsc` cannot check: it catches a dropped key, never a mistyped
+value, and there is no UI test coverage. Diff the property lines against the previous commit.
 
 # Conventions
 
@@ -23,9 +26,12 @@ When a file approaches the limit, split it along these seams, in this order:
   `` `${cardIndex}-${row}-${col}` `` by hand.
 - Components live in a folder with their styles, hooks, and subcomponents:
   `src/components/Announcer/{Announcer.tsx, Announcer.styles.ts, useBallTransition.ts, index.ts}`.
-  The `index.ts` is a one-line re-export.
+  The `index.ts` is a one-line re-export, so `@/components/Announcer` keeps working when the
+  component is split further.
 - Screens read shared state from `useGameContext()`. Leaf/presentational components take props.
 - Styles are theme-derived: always `useMemo(() => createStyles(colors), [colors])`.
+- A dimension belongs to the component that renders it (`BALL_SIZES` in `BingoBall`), and animation
+  or layout math imports it from there. Never restate another component's size as a literal.
 
 # Verify before finishing
 

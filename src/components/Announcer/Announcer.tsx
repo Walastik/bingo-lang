@@ -1,16 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Animated,
-  Easing,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Animated, Easing, Text, TouchableOpacity, View } from 'react-native';
+import BingoBall from '@/components/BingoBall';
 import { useTheme } from '@/theme/ThemeContext';
-import { ThemeColors } from '@/theme/colors';
-import BingoBall from './BingoBall';
+import { AnnouncerStyles, createStyles } from './Announcer.styles';
+import {
+  FADE_IN_MS,
+  IS_ANDROID,
+  LARGE_BALL,
+  MAX_RECENT_BALLS,
+  SHRINK_PHASE_END,
+  SLIDE_DISTANCE,
+  SLOT_WIDTH,
+  SMALL_BALL,
+  TRANSITION_MS,
+} from './announcerLayout';
 
 interface AnnouncerProps {
   currentBall: number | null;
@@ -30,22 +33,14 @@ interface AnnouncerProps {
   onRecentPress?: () => void;
 }
 
-const LARGE_BALL = 120;
-const SMALL_BALL = 50;
-const BALL_GAP = 10;
-const SLOT_WIDTH = SMALL_BALL + BALL_GAP;
-const RECENT_ROW_WIDTH = SMALL_BALL * 3 + BALL_GAP * 2;
-const SLIDE_DISTANCE = LARGE_BALL / 2 + BALL_GAP + SMALL_BALL / 2;
-const TRANSITION_MS = 460;
-const SHRINK_PHASE_END = 0.4;
-const FADE_IN_MS = 220;
-const IS_ANDROID = Platform.OS === 'android';
-
 type AnimatedValue = Animated.Value;
 
 /** Recent row as shown before a call (newest first, excludes a ball e.g. current). */
 function recentRowFromDrawn(drawnBalls: number[], excludeBall: number): number[] {
-  return drawnBalls.filter((ball) => ball !== excludeBall).slice(-3).reverse();
+  return drawnBalls
+    .filter((ball) => ball !== excludeBall)
+    .slice(-MAX_RECENT_BALLS)
+    .reverse();
 }
 
 function RecentBallsRow({
@@ -57,7 +52,7 @@ function RecentBallsRow({
   balls: number[];
   shiftProgress: AnimatedValue | null;
   isShifting: boolean;
-  styles: ReturnType<typeof createStyles>;
+  styles: AnnouncerStyles;
 }) {
   if (balls.length === 0) {
     return <View style={styles.recentPlaceholder} />;
@@ -79,7 +74,7 @@ function RecentBallsRow({
     <>
       {balls.map((ball, index) => {
         const isRightmost = index === balls.length - 1;
-        const shouldShift = isShifting && balls.length >= 3;
+        const shouldShift = isShifting && balls.length >= MAX_RECENT_BALLS;
 
         return (
           <View key={`recent-${ball}-${index}`} style={styles.recentSlot}>
@@ -123,7 +118,7 @@ const Announcer = ({
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const previousBalls = recentBalls.filter((ball) => ball !== currentBall);
-  const displayBalls = previousBalls.slice(-3).reverse();
+  const displayBalls = previousBalls.slice(-MAX_RECENT_BALLS).reverse();
 
   const prevCurrentRef = useRef<number | null>(currentBall);
   const lastUpcomingRef = useRef<number | null>(upcomingBall);
@@ -164,7 +159,7 @@ const Announcer = ({
       const drawnBeforeCall = recentBalls.filter((ball) => ball !== currentBall);
       const preShift = recentRowFromDrawn(drawnBeforeCall, oldCurrent);
 
-      if (preShift.length >= 3) {
+      if (preShift.length >= MAX_RECENT_BALLS) {
         setShiftRecents(preShift);
         setHiddenRecentBall(null);
       } else {
@@ -247,7 +242,9 @@ const Announcer = ({
   const windowCalledPreview = windowCalledBall;
   const calledBallsCount = recentBalls.length;
   const calledBallsLabel =
-    calledBallsCount >= 4 ? `Called Balls (${calledBallsCount})` : 'Called Balls';
+    calledBallsCount > MAX_RECENT_BALLS
+      ? `Called Balls (${calledBallsCount})`
+      : 'Called Balls';
 
   return (
     <View style={styles.container}>
@@ -363,7 +360,7 @@ const Announcer = ({
             activeOpacity={0.7}
             accessibilityRole="button"
             accessibilityLabel={
-              calledBallsCount >= 4
+              calledBallsCount > MAX_RECENT_BALLS
                 ? `View all called balls, ${calledBallsCount} called`
                 : 'View all called balls'
             }
@@ -398,161 +395,5 @@ const Announcer = ({
     </View>
   );
 };
-
-function createStyles(colors: ThemeColors) {
-  return StyleSheet.create({
-  container: {
-    paddingVertical: 14,
-    paddingLeft: 6,
-    paddingRight: 8,
-    backgroundColor: colors.background,
-    borderRadius: 10,
-    marginHorizontal: 10,
-    marginVertical: 8,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-  },
-  leftGroup: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 4,
-    flexShrink: 1,
-    minWidth: 0,
-  },
-  label: {
-    fontSize: 11,
-    marginBottom: 6,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    textAlign: 'center',
-  },
-  nextColumn: {
-    alignItems: 'center',
-    width: 88,
-    marginLeft: -4,
-    flexShrink: 0,
-  },
-  controlRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  controlButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.controlBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  controlButtonActive: {
-    backgroundColor: colors.controlActiveBackground,
-    borderWidth: 2,
-    borderColor: colors.controlActiveBorder,
-  },
-  controlButtonDisabled: {
-    opacity: 0.45,
-  },
-  controlIcon: {
-    fontSize: 18,
-    color: colors.text,
-    lineHeight: 22,
-  },
-  windowBox: {
-    width: 72,
-    height: 72,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: colors.windowBoxBorder,
-    backgroundColor: colors.windowBoxBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  centerColumn: {
-    alignItems: 'center',
-    flexShrink: 0,
-  },
-  currentSlot: {
-    width: LARGE_BALL,
-    height: LARGE_BALL,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  slideClip: {
-    position: 'absolute',
-    width: LARGE_BALL,
-    height: LARGE_BALL,
-    borderRadius: LARGE_BALL / 2,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  recentColumn: {
-    flexShrink: 0,
-    alignItems: 'flex-end',
-    marginLeft: 10,
-  },
-  declareWinnerButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#34C759',
-    marginBottom: 8,
-  },
-  declareWinnerButtonText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  calledBallsColumn: {
-    alignItems: 'flex-end',
-  },
-  calledBallsButton: {
-    alignSelf: 'flex-end',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: colors.calledBallsButtonBackground,
-    borderWidth: 1,
-    borderColor: colors.calledBallsButtonBorder,
-    marginBottom: 6,
-  },
-  calledBallsButtonDisabled: {
-    opacity: 0.6,
-  },
-  calledBallsButtonText: {
-    fontSize: 11,
-    color: colors.calledBallsButtonText,
-    textTransform: 'uppercase',
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  recentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: BALL_GAP,
-    minHeight: SMALL_BALL,
-    width: RECENT_ROW_WIDTH,
-  },
-  recentRowClipped: {
-    overflow: 'hidden',
-  },
-  recentSlot: {
-    width: SMALL_BALL,
-    height: SMALL_BALL,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  recentPlaceholder: {
-    width: SMALL_BALL,
-    height: SMALL_BALL,
-  },
-  });
-}
 
 export default Announcer;

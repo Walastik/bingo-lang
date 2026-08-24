@@ -1,14 +1,8 @@
 import React, { useMemo } from 'react';
-import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Modal, Pressable, Text, View } from 'react-native';
 import { GameSpeed, GAME_SPEED_OPTIONS } from '@/game/speed';
 import { useTheme } from '@/theme/ThemeContext';
-import { ThemeColors } from '@/theme/colors';
+import { createStyles } from './GameSettingsModal.styles';
 
 interface GameSettingsModalProps {
   visible: boolean;
@@ -18,102 +12,7 @@ interface GameSettingsModalProps {
   onClose: () => void;
 }
 
-const formatSpeedLabel = (speed: GameSpeed) => {
-  if (speed === 1) {
-    return '1x';
-  }
-  return `${speed}x`;
-};
-
-function createStyles(colors: ThemeColors) {
-  return StyleSheet.create({
-    overlay: {
-      flex: 1,
-      backgroundColor: colors.modalOverlay,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 24,
-    },
-    content: {
-      backgroundColor: colors.surface,
-      borderRadius: 20,
-      padding: 24,
-      width: '100%',
-      maxWidth: 360,
-      position: 'relative',
-    },
-    closeIconButton: {
-      position: 'absolute',
-      top: 12,
-      right: 12,
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: colors.surfaceMuted,
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1,
-    },
-    closeIcon: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: colors.textSecondary,
-      lineHeight: 18,
-    },
-    title: {
-      fontSize: 22,
-      fontWeight: '700',
-      color: colors.text,
-      marginBottom: 20,
-      textAlign: 'center',
-      paddingHorizontal: 28,
-    },
-    sectionLabel: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: colors.textSecondary,
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
-      marginBottom: 12,
-    },
-    speedOptions: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 10,
-      marginBottom: 24,
-    },
-    speedButton: {
-      minWidth: 56,
-      paddingVertical: 12,
-      paddingHorizontal: 14,
-      borderRadius: 10,
-      backgroundColor: colors.surfaceMuted,
-      alignItems: 'center',
-    },
-    speedButtonSelected: {
-      backgroundColor: '#007AFF',
-    },
-    speedButtonText: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.text,
-    },
-    speedButtonTextSelected: {
-      color: '#fff',
-    },
-    quitButton: {
-      backgroundColor: '#FF3B30',
-      paddingVertical: 14,
-      borderRadius: 12,
-      alignItems: 'center',
-    },
-    quitButtonText: {
-      color: '#fff',
-      fontSize: 17,
-      fontWeight: '700',
-    },
-  });
-}
+const formatSpeedLabel = (speed: GameSpeed) => `${speed}x`;
 
 const GameSettingsModal = ({
   visible,
@@ -161,7 +60,10 @@ const GameSettingsModal = ({
                   accessibilityLabel={`${formatSpeedLabel(speed)} speed`}
                 >
                   <Text
-                    style={[styles.speedButtonText, isSelected && styles.speedButtonTextSelected]}
+                    style={[
+                      styles.speedButtonText,
+                      isSelected && styles.speedButtonTextSelected,
+                    ]}
                   >
                     {formatSpeedLabel(speed)}
                   </Text>

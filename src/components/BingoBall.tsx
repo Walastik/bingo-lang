@@ -2,9 +2,16 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { getBallString, getBallColor } from '@/game/ballFormat';
 
+/** Rendered diameter per size. Layouts that animate a ball must use these. */
+export const BALL_SIZES = { small: 50, large: 120 } as const;
+
+export type BallSize = keyof typeof BALL_SIZES;
+
+const FONT_SIZES: Record<BallSize, number> = { small: 16, large: 32 };
+
 interface BingoBallProps {
   value: number;
-  size?: 'small' | 'large';
+  size?: BallSize;
   /** Disables shadow/elevation — avoids Android compositing flicker */
   flat?: boolean;
 }
@@ -13,8 +20,8 @@ const BingoBall = memo(({ value, size = 'small', flat = false }: BingoBallProps)
   const ballText = getBallString(value);
   const backgroundColor = getBallColor(value);
 
-  const dimension = size === 'large' ? 120 : 50;
-  const fontSize = size === 'large' ? 32 : 16;
+  const dimension = BALL_SIZES[size];
+  const fontSize = FONT_SIZES[size];
 
   return (
     <View
