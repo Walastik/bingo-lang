@@ -88,17 +88,27 @@ Mechanical: `createStyles(colors)` → `<Component>.styles.ts`, call site unchan
 
 ## Phase 3 — Component decomposition
 
-Folders and the shared-layout module now exist, so each item is additive.
+Folders and the shared-layout module already existed, so every item was additive.
 
-- [ ] `Announcer/` → `useBallTransition.ts`, `AnnouncerControls.tsx`, `CurrentBallStage.tsx`,
-      `RecentBallsRow.tsx` (already an inner component, just move it), `CalledBallsSummary.tsx`
-- [ ] `BingoCardView/` → `useWinPreview.ts`, `BingoCardCell.tsx`
-- [ ] `WinningCardView/` → `useWinCardAnimation.ts`, `WinningCardCell.tsx`
-- [ ] `CardHeaderRow.tsx` — one shared B-I-N-G-O header (dedupes both card views)
-- [ ] `useGridCellSize.ts` — shared `onLayout` → `cellSize` hook, wrapping `getCellSize`
-- [ ] `BingoCardCarousel/` → `useCarouselPaging.ts`, `CarouselControls.tsx`
-- [ ] `WinnerOverlay/winnerCopy.ts` — pure title/message/ownerLabel functions
-- [ ] `CalledBallsBoard/BallGrid.tsx` — the 15×5 grid
+- [x] `Announcer/` → `useBallTransition.ts`, `AnnouncerControls.tsx`, `CurrentBallStage.tsx`,
+      `RecentBallsRow.tsx`, `CalledBallsSummary.tsx`, plus an unplanned `NextBallWindow.tsx`: the
+      controls and the next-ball box are one visual column but have nothing else in common.
+      400 → 113, the last component over budget.
+- [x] `BingoCardView/` → `useWinPreview.ts`, `BingoCardCell.tsx` (197 → 85)
+- [x] `WinningCardView/` → `useWinCardAnimation.ts`, `WinningCardCell.tsx` (230 → 120)
+- [x] `CardHeaderRow.tsx` — one shared B-I-N-G-O header. The two copies were identical apart from
+      the play card's tappable columns, so it takes an optional `onColumnPress`. Flat rather than
+      foldered, like `BingoBall`: one file, static styles, no theme.
+- [x] `useGridCellSize.ts` — shared `onLayout` → `cellSize` hook wrapping `getCellSize`
+- [x] `BingoCardCarousel/` → `useCarouselPaging.ts`, `CarouselControls.tsx` (189 → 125)
+- [x] `WinnerOverlay/winnerCopy.ts` — pure title/message/ownerLabel. Replaces three stacked
+      ternaries with `switch` on the state, so a new state is a compile error rather than a silent
+      fallthrough. Now covered by 10 tests, which is the payoff for making it pure.
+- [x] `CalledBallsBoard/BallGrid.tsx` — the 15×5 grid
+- [x] Subcomponents receive the parent's `styles` object rather than calling `createStyles`. A
+      25-cell grid would otherwise build 25 stylesheets per card.
+
+Largest file in `src/components/` is now 171 lines (`useBallTransition.ts`), down from 400.
 
 ## Phase 4 — Decompose `useBingoGame` (risky: timers, refs, state machine)
 
@@ -135,7 +145,8 @@ phase moves the matching JSX in beside them and `App.tsx` stops importing both.
 
 - [ ] `npm run lint:lines` clean, `npm run typecheck` clean, `npm test` passing
 - [ ] No `src/utils/`, no leftover barrel files
-- [ ] `README.md` updated
+- [ ] `README.md` rewritten — it is still the untouched template, describing an `app/` directory
+      and Expo Router that this project has never used
 
 ## Manual QA checklist
 

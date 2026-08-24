@@ -30,6 +30,9 @@ value, and there is no UI test coverage. Diff the property lines against the pre
   component is split further.
 - Screens read shared state from `useGameContext()`. Leaf/presentational components take props.
 - Styles are theme-derived: always `useMemo(() => createStyles(colors), [colors])`.
+- Subcomponents take the parent's stylesheet as a prop (`styles: AnnouncerStyles`) instead of
+  calling `createStyles` themselves; a 25-cell grid would otherwise build 25 stylesheets. That is
+  what each `.styles.ts` exports its `ReturnType` for.
 - A dimension belongs to the component that renders it (`BALL_SIZES` in `BingoBall`), and animation
   or layout math imports it from there. Never restate another component's size as a literal.
 

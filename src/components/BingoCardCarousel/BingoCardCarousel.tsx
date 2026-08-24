@@ -1,17 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  ListRenderItem,
-} from 'react-native';
+import React, { useCallback, useMemo } from 'react';
+import { View, FlatList, ListRenderItem } from 'react-native';
 import BingoCardView from '@/components/BingoCardView';
 import { BingoCard, WinPattern } from '@/game/types';
 import { useTheme } from '@/theme/ThemeContext';
 import { createStyles } from './BingoCardCarousel.styles';
+import CarouselControls from './CarouselControls';
+import { useCarouselPaging } from './useCarouselPaging';
 
 interface BingoCardCarouselProps {
   cards: BingoCard[];
@@ -37,44 +31,16 @@ const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const resolvedCardIndices = cardIndices ?? cards.map((_, index) => index);
-  const listRef = useRef<FlatList<BingoCard>>(null);
-  const [pageWidth, setPageWidth] = useState(0);
-  const [activeIndex, setActiveIndex] = useState(0);
-
   const cardCount = cards.length;
 
-  useEffect(() => {
-    setActiveIndex(0);
-    if (pageWidth > 0) {
-      listRef.current?.scrollToOffset({ offset: 0, animated: false });
-    }
-  }, [cardCount, pageWidth]);
-
-  const goToIndex = useCallback(
-    (index: number) => {
-      if (pageWidth <= 0) {
-        return;
-      }
-      const clamped = Math.max(0, Math.min(index, cardCount - 1));
-      listRef.current?.scrollToOffset({
-        offset: clamped * pageWidth,
-        animated: true,
-      });
-      setActiveIndex(clamped);
-    },
-    [cardCount, pageWidth],
-  );
-
-  const handleMomentumScrollEnd = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      if (pageWidth <= 0) {
-        return;
-      }
-      const index = Math.round(event.nativeEvent.contentOffset.x / pageWidth);
-      setActiveIndex(Math.max(0, Math.min(index, cardCount - 1)));
-    },
-    [cardCount, pageWidth],
-  );
+  const {
+    listRef,
+    pageWidth,
+    activeIndex,
+    onLayout,
+    goToIndex,
+    handleMomentumScrollEnd,
+  } = useCarouselPaging(cardCount);
 
   const renderItem: ListRenderItem<BingoCard> = useCallback(
     ({ item, index }) => (
@@ -106,6 +72,7 @@ const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
     return null;
   }
 
+  // A lone card needs no paging, and the FlatList would add a scroll view for nothing.
   if (cardCount === 1) {
     return (
       <View style={styles.singleCardContainer}>
@@ -122,19 +89,8 @@ const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
     );
   }
 
-  const isFirst = activeIndex === 0;
-  const isLast = activeIndex === cardCount - 1;
-
   return (
-    <View
-      style={styles.container}
-      onLayout={(event) => {
-        const nextWidth = event.nativeEvent.layout.width;
-        if (nextWidth !== pageWidth) {
-          setPageWidth(nextWidth);
-        }
-      }}
-    >
+    <View style={styles.container} onLayout={onLayout}>
       {pageWidth > 0 && (
         <FlatList
           ref={listRef}
@@ -156,37 +112,12 @@ const BingoCardCarousel: React.FC<BingoCardCarouselProps> = ({
         />
       )}
 
-      <View style={styles.controls}>
-        <TouchableOpacity
-          style={[styles.arrowButton, isFirst && styles.arrowButtonDisabled]}
-          onPress={() => goToIndex(activeIndex - 1)}
-          disabled={isFirst}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="Previous card"
-        >
-          <Text style={[styles.arrowText, isFirst && styles.arrowTextDisabled]}>
-            ‹
-          </Text>
-        </TouchableOpacity>
-
-        <Text style={styles.pageIndicator}>
-          Card {activeIndex + 1} of {cardCount}
-        </Text>
-
-        <TouchableOpacity
-          style={[styles.arrowButton, isLast && styles.arrowButtonDisabled]}
-          onPress={() => goToIndex(activeIndex + 1)}
-          disabled={isLast}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="Next card"
-        >
-          <Text style={[styles.arrowText, isLast && styles.arrowTextDisabled]}>
-            ›
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <CarouselControls
+        activeIndex={activeIndex}
+        cardCount={cardCount}
+        onGoToIndex={goToIndex}
+        styles={styles}
+      />
     </View>
   );
 };

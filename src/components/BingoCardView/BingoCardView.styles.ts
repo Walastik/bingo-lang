@@ -39,23 +39,6 @@ export function createStyles(colors: ThemeColors) {
     previewToggleIcon: {
       fontSize: 15,
     },
-    header: {
-      flexDirection: 'row',
-      gap: GRID_GAP,
-      marginBottom: 8,
-    },
-    headerCell: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 6,
-      borderRadius: 8,
-    },
-    headerText: {
-      fontSize: 17,
-      fontWeight: 'bold',
-      color: '#FFF',
-    },
     grid: {
       width: '100%',
       gap: GRID_GAP,

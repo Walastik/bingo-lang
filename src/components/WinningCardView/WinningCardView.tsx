@@ -1,9 +1,7 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useMemo } from 'react';
 import { Animated, Text, View } from 'react-native';
-import { getCellSize } from '@/components/cardGridLayout';
-import { getBallColor } from '@/game/ballFormat';
+import CardHeaderRow from '@/components/CardHeaderRow';
 import {
-  COLUMN_LETTERS,
   GRID_SIZE,
   cellKey,
   daubKey,
@@ -11,10 +9,11 @@ import {
   toFlatIndex,
 } from '@/game/constants';
 import { BingoCard, CellCoord } from '@/game/types';
+import { useGridCellSize } from '@/hooks/useGridCellSize';
 import { useTheme } from '@/theme/ThemeContext';
+import WinningCardCell from './WinningCardCell';
 import { createStyles } from './WinningCardView.styles';
-
-const STAGGER_MS = 70;
+import { useWinCardAnimation } from './useWinCardAnimation';
 
 interface WinningCardViewProps {
   card: BingoCard;
@@ -37,11 +36,10 @@ const WinningCardView: React.FC<WinningCardViewProps> = ({
 }) => {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { cellSize, onLayout } = useGridCellSize();
+  const { cardScale, cardOpacity, pulse, cellRevealValues } =
+    useWinCardAnimation(winningCells);
 
-  const [gridWidth, setGridWidth] = React.useState(0);
-  const cardScale = useRef(new Animated.Value(0.85)).current;
-  const cardOpacity = useRef(new Animated.Value(0)).current;
-  const pulse = useRef(new Animated.Value(0)).current;
   const drawnBallsSet = useMemo(() => new Set(drawnBalls), [drawnBalls]);
 
   const winningCellKeys = useMemo(
@@ -49,57 +47,10 @@ const WinningCardView: React.FC<WinningCardViewProps> = ({
     [winningCells],
   );
 
-  const cellRevealValues = useRef(
-    winningCells.map(() => new Animated.Value(0)),
-  ).current;
-
-  const cellSize = getCellSize(gridWidth);
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(cardScale, {
-        toValue: 1,
-        friction: 6,
-        tension: 80,
-        useNativeDriver: true,
-      }),
-      Animated.timing(cardOpacity, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    const staggeredReveals = winningCells.map((_, index) =>
-      Animated.sequence([
-        Animated.delay(index * STAGGER_MS),
-        Animated.spring(cellRevealValues[index], {
-          toValue: 1,
-          friction: 5,
-          tension: 120,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-
-    Animated.stagger(STAGGER_MS / 2, staggeredReveals).start(() => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulse, {
-            toValue: 1,
-            duration: 700,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulse, {
-            toValue: 0,
-            duration: 700,
-            useNativeDriver: true,
-          }),
-        ]),
-      ).start();
-    });
-  }, [cardOpacity, cardScale, cellRevealValues, pulse, winningCells]);
-
+  /**
+   * An NPC is assumed to daub perfectly, so any called number counts. The
+   * user's card shows only what they actually daubed.
+   */
   const isCellDaubed = (row: number, col: number): boolean => {
     if (isFreeSpace(row, col)) {
       return true;
@@ -133,90 +84,30 @@ const WinningCardView: React.FC<WinningCardViewProps> = ({
     >
       <Text style={styles.ownerLabel}>{ownerLabel}</Text>
 
-      <View style={styles.header}>
-        {COLUMN_LETTERS.map((letter) => (
-          <View
-            key={letter}
-            style={[styles.headerCell, { backgroundColor: getBallColor(letter) }]}
-          >
-            <Text style={styles.headerText}>{letter}</Text>
-          </View>
-        ))}
-      </View>
+      <CardHeaderRow />
 
-      <View
-        style={styles.grid}
-        onLayout={(event) => {
-          const nextWidth = event.nativeEvent.layout.width;
-          if (nextWidth !== gridWidth) {
-            setGridWidth(nextWidth);
-          }
-        }}
-      >
+      <View style={styles.grid} onLayout={onLayout}>
         {cellSize > 0 &&
           Array.from({ length: GRID_SIZE }, (_, row) => (
             <View key={row} style={[styles.gridRow, { height: cellSize }]}>
               {card.grid
                 .slice(row * GRID_SIZE, row * GRID_SIZE + GRID_SIZE)
                 .map((cell, col) => {
-                  const flatIndex = toFlatIndex(row, col);
-                  const isFree = cell === 'FREE';
-                  const isDaubed = isCellDaubed(row, col);
-                  const isWinningCell = winningCellKeys.has(cellKey(row, col));
                   const winningIndex = getWinningCellIndex(row, col);
-                  const revealValue =
-                    winningIndex >= 0 ? cellRevealValues[winningIndex] : null;
 
                   return (
-                    <View
-                      key={flatIndex}
-                      style={[
-                        styles.cell,
-                        { width: cellSize, height: cellSize },
-                        isDaubed && styles.cellDaubed,
-                        isWinningCell && styles.cellWinning,
-                      ]}
-                    >
-                      <Text
-                        style={[styles.cellText, isDaubed && styles.cellTextDaubed]}
-                      >
-                        {isFree ? '★' : cell}
-                      </Text>
-                      {isDaubed && !isFree && (
-                        <View
-                          style={[
-                            styles.daubMarker,
-                            {
-                              width: cellSize * 0.85,
-                              height: cellSize * 0.85,
-                              borderRadius: cellSize * 0.425,
-                            },
-                          ]}
-                        />
-                      )}
-                      {isWinningCell && revealValue && (
-                        <Animated.View
-                          pointerEvents="none"
-                          style={[
-                            styles.winHighlight,
-                            {
-                              opacity: Animated.add(
-                                revealValue,
-                                Animated.multiply(pulse, 0.35),
-                              ),
-                              transform: [
-                                {
-                                  scale: revealValue.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: [0.3, 1],
-                                  }),
-                                },
-                              ],
-                            },
-                          ]}
-                        />
-                      )}
-                    </View>
+                    <WinningCardCell
+                      key={toFlatIndex(row, col)}
+                      value={cell}
+                      cellSize={cellSize}
+                      isDaubed={isCellDaubed(row, col)}
+                      isWinning={winningCellKeys.has(cellKey(row, col))}
+                      revealValue={
+                        winningIndex >= 0 ? cellRevealValues[winningIndex] : null
+                      }
+                      pulse={pulse}
+                      styles={styles}
+                    />
                   );
                 })}
             </View>

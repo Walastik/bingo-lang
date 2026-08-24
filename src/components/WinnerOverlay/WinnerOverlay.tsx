@@ -4,8 +4,12 @@ import WinningCardView from '@/components/WinningCardView';
 import { WinResult } from '@/game/types';
 import { useTheme } from '@/theme/ThemeContext';
 import { createStyles } from './WinnerOverlay.styles';
-
-type WinnerGameState = 'roundWon' | 'gameWon' | 'npcWon' | 'invalidBingo';
+import {
+  WinnerGameState,
+  getOwnerLabel,
+  getWinnerMessage,
+  getWinnerTitle,
+} from './winnerCopy';
 
 interface WinnerOverlayProps {
   gameState: WinnerGameState;
@@ -37,35 +41,21 @@ const WinnerOverlay: React.FC<WinnerOverlayProps> = ({
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
+  const copyParams = {
+    gameState,
+    currentRoundNumber,
+    totalRounds,
+    currentRoundLabel,
+    hasMoreRounds,
+  };
+
   const showWinningCard =
     winResult &&
     (gameState === 'roundWon' || gameState === 'gameWon' || gameState === 'npcWon');
 
-  const title =
-    gameState === 'roundWon'
-      ? `🎉 Round ${currentRoundNumber} Complete! 🎉`
-      : gameState === 'gameWon'
-        ? '🏆 YOU WIN THE GAME! 🏆'
-        : gameState === 'npcWon'
-          ? '😢 NPC Won!'
-          : '❌ Invalid Bingo!';
-
-  const message =
-    gameState === 'roundWon'
-      ? `You won ${currentRoundLabel}. ${totalRounds - currentRoundNumber} round${totalRounds - currentRoundNumber === 1 ? '' : 's'} remaining.`
-      : gameState === 'gameWon'
-        ? `You completed all ${totalRounds} rounds. Great job!`
-        : gameState === 'npcWon' && hasMoreRounds
-          ? `An NPC won round ${currentRoundNumber} (${currentRoundLabel}). Here's their card!`
-          : gameState === 'npcWon'
-            ? `An NPC won the final round (${currentRoundLabel}). Better luck next time!`
-            : `You don't have a valid ${currentRoundLabel} yet. Review your daubs.`;
-
-  const ownerLabel = winResult?.isNpc
-    ? 'NPC winning card'
-    : winResult
-      ? `Your card #${winResult.cardIndex + 1}`
-      : '';
+  // An NPC win with rounds left continues the game, so it advances rather than restarts.
+  const advancesToNextRound =
+    gameState === 'roundWon' || (gameState === 'npcWon' && hasMoreRounds);
 
   return (
     <View style={styles.overlay}>
@@ -75,8 +65,8 @@ const WinnerOverlay: React.FC<WinnerOverlayProps> = ({
         bounces={false}
       >
         <View style={styles.content}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
+          <Text style={styles.title}>{getWinnerTitle(copyParams)}</Text>
+          <Text style={styles.message}>{getWinnerMessage(copyParams)}</Text>
 
           {showWinningCard && (
             <View style={styles.cardSection}>
@@ -87,18 +77,17 @@ const WinnerOverlay: React.FC<WinnerOverlayProps> = ({
                 isNpcCard={winResult.isNpc}
                 userDaubs={userDaubs}
                 cardIndex={winResult.cardIndex}
-                ownerLabel={ownerLabel}
+                ownerLabel={getOwnerLabel(winResult)}
               />
 
-              {gameState === 'roundWon' || (gameState === 'npcWon' && hasMoreRounds) ? (
-                <TouchableOpacity style={styles.primaryButton} onPress={onNextRound}>
-                  <Text style={styles.primaryButtonText}>Next Round</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity style={styles.primaryButton} onPress={onPlayAgain}>
-                  <Text style={styles.primaryButtonText}>Play Again</Text>
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={advancesToNextRound ? onNextRound : onPlayAgain}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {advancesToNextRound ? 'Next Round' : 'Play Again'}
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
 
