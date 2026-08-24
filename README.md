@@ -1,114 +1,82 @@
-# 🚀 Expo App
+# Bingo Lang!
 
-A [Expo](https://expo.dev) project built with React Native.
+A fun little bingo app para sa aking pamilya! Built with Expo and React Native.
 
-## 🛠️ Getting Started
+Two ways to play. Deal yourself up to four cards and race ten invisible opponents, or run
+the board as a caller for a room of people playing on paper.
 
-### Prerequisites
+## Getting started
 
-- [Node.js](https://nodejs.org/) (v18+ recommended)
-- [Expo CLI](https://docs.expo.dev/more/expo-cli/) or use `npx expo`
+Node 18 or newer, then:
 
-### Installation
-
-1. Clone the repo:
-   ```bash
-   git clone https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME.git
-   cd YOUR_REPO_NAME
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-
-3. Start the app:
-   ```bash
-   npx expo start
-   ```
-
-4. Press `i` to open in iOS Simulator, `a` for Android Emulator, or scan the QR code with the **Expo Go** app on your physical device.
-
----
-
-## 📁 Project Structure
-
-- `app/` — Main React Native screens (Expo Router)
-- `assets/` — Images, fonts, icons
-- `components/` — Reusable UI components
-- `constants/`, `utils/`, etc. — Supporting code
-
----
-
-## 🧪 Testing & Debugging
-
-- `npx expo start --dev-client` — for custom development builds (Expo Dev Client)
-- `npx expo install react-native-web` — to enable web support
-
----
-
-## 📦 Deployment
-
-- **Prebuild**: `npx expo prebuild` (if using native modules)
-- **EAS Build**: `eas build -p ios --profile preview`
-- **EAS Submit**: `eas submit -p ios --profile preview`
-
-> See [Expo Documentation](https://docs.expo.dev/) for full guides.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please open an issue or submit a PR.
-
----
-
-## 📜 License
-
-MIT — see `LICENSE` for details.
+```sh
+npm install
+npm start
 ```
 
-> Replace `YOUR_GITHUB_USERNAME/YOUR_REPO_NAME` with your actual GitHub info.
+Press `i` for the iOS simulator, `a` for an Android emulator, or scan the QR code with
+[Expo Go](https://expo.dev/go). `npm run ios` and `npm run android` build and run natively
+instead, which needs Xcode or Android Studio installed.
 
----
+## How the game works
 
-### ✅ `.gitignore` (Expo/React Native)
+**Rounds.** The lobby lists fourteen rounds — Regular Bingo, Double Bingo, Postage Stamp,
+6 Pack, Pyramid, Four Corners, X, T or Z, H, Kite, Arrowhead, Outside Frame, Inside Frame,
+and Blackout. Tap any of them to include or exclude it; they play in a fixed order, and at
+least one has to stay on. Each round deals fresh cards.
 
-```gitignore packages/expo-app/.gitignore
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
+**Calling.** A ball is drawn every five seconds, and the one coming next peeks out a
+quarter of the way through the interval. Settings offer speeds from 0.25× to 3×. Pausing
+keeps the time remaining on the current interval rather than restarting it, and changing
+speed while paused rescales what is left.
 
-# testing
-/coverage
+**Daubing.** Tap a space to mark it, or tap a column's letter to daub every called number
+in that column. Auto mode daubs for you and back-fills anything already called. With
+several cards in play, the carousel keeps the one closest to a bingo in front.
 
-# production
-/build
-/.expo
+**Winning.** BINGO! is checked against the round's pattern and the spaces you actually
+daubed — marking a number that has not been called never counts. A wrong call just resumes
+the draw. An opponent can win first, which ends the round and shows you their card.
 
-# misc
-.DS_Store
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+**Caller Only.** No cards are dealt. You draw each ball by hand and tap Declare Winner when
+someone in the room calls it, which advances the lineup; declaring on the final round
+returns to the lobby.
 
-# debugging
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+Dark mode is in the lobby under Appearance and survives a restart.
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+## Project layout
 
-# OS
-Thumbs.db# bingo-lang
-A fun little bingo app para sa aking pamilya!
+| Path | What lives there |
+| --- | --- |
+| `index.ts` | Entry point. Wraps the app in the safe-area, theme, and game providers. |
+| `App.tsx` | Routes between the two screens, nothing else. |
+| `src/game/` | The rules as pure functions: cards and decks, win checking, distance-to-bingo, the pattern builders, speed math. No React, and unit tested. |
+| `src/hooks/` | `useBingoGame` composes the game from `useCardSet`, `useRoundProgression`, `useDaubs`, `useBallCaller`, `useWinDetection`, and `useGameFlow`. |
+| `src/state/` | `GameContext` holds the lobby configuration and the game it feeds, so both screens read one value. |
+| `src/screens/` | `LobbyScreen/` and `GameScreen/`, each with its styles, hooks, and sections. |
+| `src/components/` | Shared UI, each in a folder with its styles, hooks, and subcomponents. |
+| `src/theme/` | Palettes, the theme provider, and the screen container shared by both screens. |
+
+Imports across areas use the `@/` alias (`@/game/card`); relative paths are for same-folder
+siblings only.
+
+## Checks
+
+```sh
+npm run typecheck   # tsc --noEmit
+npm run lint:lines  # no file in src/ over 250 lines
+npm test            # unit tests for src/game/
+```
+
+The line budget exists so any single file fits comfortably in a local model's context
+window. [`AGENTS.md`](./AGENTS.md) documents it along with the seams to split along when a
+file grows too big, and the conventions the code follows.
+
+## Builds
+
+Internal distribution builds go through [EAS](https://docs.expo.dev/build/introduction/):
+
+```sh
+eas build -p ios --profile preview
+eas build -p android --profile preview
+```

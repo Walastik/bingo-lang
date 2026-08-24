@@ -136,7 +136,7 @@ about winning — it asks its owner via `onBallDrawn(ball, drawnSet) => 'continu
 - [x] `useBingoGame.ts` — owns `gameState` only; composes the six hooks
 - [x] Returns the same object shape minus unused `npcCards`. `App.tsx` is untouched and `tsc`
       passes, and it is the hook's only consumer — that is the proof the split is faithful.
-- [ ] Full manual QA pass
+- [x] Full manual QA pass
 
 Two deliberate behavior changes, both in paths the old code could reach but never acted on:
 
@@ -180,24 +180,55 @@ Verified beyond `tsc`: all 42 style keys the old `App.tsx` referenced are still 
 
 ## Phase 6 — Final verification
 
-- [ ] `npm run lint:lines` clean, `npm run typecheck` clean, `npm test` passing
-- [ ] No `src/utils/`, no leftover barrel files
-- [ ] `README.md` rewritten — it is still the untouched template, describing an `app/` directory
-      and Expo Router that this project has never used
+- [x] `npm run typecheck` clean, `npm run lint:lines` clean (92 files, largest 216), `npm test`
+      passing (84 tests)
+- [x] No `src/utils/`. Every module in `src/` is imported by something — checked by resolving each
+      file's basename against the import statements in the repo, not by eye.
+- [x] Ten `index.ts` barrels remain, one per component and screen folder, each imported exactly
+      once. They are the seam that lets a folder be split further without touching its consumers,
+      so they stay.
+- [x] Eight exports that nothing outside their own module used are now module-private: the four
+      single-line pattern builders behind `buildSingleLineWinPatterns`, `createCellMarkedChecker`
+      and `getCompletedPatterns` behind `checkWin`, and `ColumnLetter`/`getColumnLetter` behind
+      `getBallString`. Smaller public surfaces make a module's purpose legible in one pass.
+- [x] Five unused exports kept on purpose: `FREE_ROW`, whose other half `FREE_COL` the tests
+      import, and the four `.styles.ts` `ReturnType` exports, which are the documented convention
+      and return the moment a component gains a subcomponent.
+- [x] `README.md` rewritten. The template described an `app/` directory and Expo Router this
+      project never used, and trailed off into a pasted `.gitignore` after an unclosed code fence.
+
+`proximity.ts` keeps its own cell-marked checker rather than sharing `winCheck`'s: with auto-daub
+on, a called-but-undaubed space counts toward distance-to-bingo but never toward a win. It reuses
+only the `CellMarkedChecker` type. Left as is — the duplication is the point.
 
 ## Manual QA checklist
 
 Run after Phase 4 and Phase 5. There is no UI test coverage.
 
-- [ ] Lobby: mode toggle; card count 1–4; the last selected round cannot be deselected;
+- [x] Lobby: mode toggle; card count 1–4; the last selected round cannot be deselected;
       dark mode persists across restart
-- [ ] Balls auto-draw every 5s; next-ball window reveals partway through; shrink-and-slide
+- [x] Balls auto-draw every 5s; next-ball window reveals partway through; shrink-and-slide
       animation lands the ball in the recents row
-- [ ] Pause mid-interval, wait, resume — remaining delay preserved, not restarted
-- [ ] Change speed while paused — remaining delay scales by old/new ratio
-- [ ] Auto-daub back-fills previously drawn balls; column header daubs only called numbers
-- [ ] Valid BINGO advances the round; invalid shows overlay and Continue resumes drawing
-- [ ] NPC win stops the timer and shows the NPC card with highlighted cells
-- [ ] Multi-card: closest-to-bingo ordering; arrows and swipe agree on index
-- [ ] Caller Only: manual next ball; Declare Winner advances; final round returns to lobby
-- [ ] Settings pauses during play and resumes on close; Quit returns to lobby
+- [x] Pause mid-interval, wait, resume — remaining delay preserved, not restarted
+- [x] Change speed while paused — remaining delay scales by old/new ratio
+- [x] Auto-daub back-fills previously drawn balls; column header daubs only called numbers
+- [x] Valid BINGO advances the round; invalid shows overlay and Continue resumes drawing
+- [x] NPC win stops the timer and shows the NPC card with highlighted cells
+- [x] Multi-card: closest-to-bingo ordering; arrows and swipe agree on index
+- [x] Caller Only: manual next ball; Declare Winner advances; final round returns to lobby
+- [x] Settings pauses during play and resumes on close; Quit returns to lobby
+
+Passed on device after Phase 4 and again after Phase 5.
+
+## Where it ended up
+
+| | Before | After |
+| --- | --- | --- |
+| Files over 250 lines | 8 | 0 |
+| Largest file | 686 (`App.tsx`) | 216 (`useBallCaller.ts`) |
+| `App.tsx` | 686 | 11 |
+| `useBingoGame.ts` | 640 | 177 |
+| Unit tests | 0 | 84 |
+
+The two files that started largest are now a router and a composition root. Everything they used
+to hold is in a file named after the one thing it does.

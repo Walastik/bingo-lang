@@ -1,6 +1,6 @@
 import { BALLS_PER_COLUMN, COLUMN_LETTERS } from '@/game/constants';
 
-export type ColumnLetter = (typeof COLUMN_LETTERS)[number];
+type ColumnLetter = (typeof COLUMN_LETTERS)[number];
 
 const LETTER_COLORS: Record<ColumnLetter, string> = {
   B: '#007AFF',
@@ -12,7 +12,7 @@ const LETTER_COLORS: Record<ColumnLetter, string> = {
 
 const FALLBACK_COLOR = '#E0E0E0';
 
-export function getColumnLetter(ball: number): ColumnLetter {
+function getColumnLetter(ball: number): ColumnLetter {
   const index = Math.floor((ball - 1) / BALLS_PER_COLUMN);
   const clamped = Math.min(Math.max(index, 0), COLUMN_LETTERS.length - 1);
 

@@ -14,7 +14,7 @@ export type CellMarkedChecker = (row: number, col: number) => boolean;
  * is called, but the user must also have daubed the space — daubing an uncalled
  * number never counts.
  */
-export function createCellMarkedChecker(
+function createCellMarkedChecker(
   card: BingoCard,
   drawnBalls: Set<number>,
   isUser: boolean,
@@ -41,7 +41,7 @@ const isPatternComplete = (
   isCellMarked: CellMarkedChecker,
 ): boolean => pattern.cells.every(({ row, col }) => isCellMarked(row, col));
 
-export function getCompletedPatterns(
+function getCompletedPatterns(
   card: BingoCard,
   drawnBalls: Set<number>,
   isUser: boolean,

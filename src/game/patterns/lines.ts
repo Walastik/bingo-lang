@@ -7,25 +7,25 @@ import {
   buildSecondaryDiagonalCells,
 } from './primitives';
 
-export const buildRowPattern = (row: number, size = GRID_SIZE): WinPattern => ({
+const buildRowPattern = (row: number, size = GRID_SIZE): WinPattern => ({
   id: `row-${row + 1}`,
   label: `Row ${row + 1}`,
   cells: buildRowCells(row, size),
 });
 
-export const buildColumnPattern = (col: number, size = GRID_SIZE): WinPattern => ({
+const buildColumnPattern = (col: number, size = GRID_SIZE): WinPattern => ({
   id: `col-${col + 1}`,
   label: `Column ${col + 1}`,
   cells: buildColumnCells(col, size),
 });
 
-export const buildPrimaryDiagonalPattern = (size = GRID_SIZE): WinPattern => ({
+const buildPrimaryDiagonalPattern = (size = GRID_SIZE): WinPattern => ({
   id: 'diag-primary',
   label: 'Primary diagonal',
   cells: buildPrimaryDiagonalCells(size),
 });
 
-export const buildSecondaryDiagonalPattern = (size = GRID_SIZE): WinPattern => ({
+const buildSecondaryDiagonalPattern = (size = GRID_SIZE): WinPattern => ({
   id: 'diag-secondary',
   label: 'Secondary diagonal',
   cells: buildSecondaryDiagonalCells(size),

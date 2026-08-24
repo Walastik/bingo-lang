@@ -5,7 +5,7 @@ import { getBallString, getBallColor } from '@/game/ballFormat';
 /** Rendered diameter per size. Layouts that animate a ball must use these. */
 export const BALL_SIZES = { small: 50, large: 120 } as const;
 
-export type BallSize = keyof typeof BALL_SIZES;
+type BallSize = keyof typeof BALL_SIZES;
 
 const FONT_SIZES: Record<BallSize, number> = { small: 16, large: 32 };
 
