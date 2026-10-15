@@ -71,7 +71,7 @@ export function createStyles(colors: ThemeColors) {
       zIndex: 1,
     },
     winPreviewMarker: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       borderRadius: 8,
       backgroundColor: 'rgba(52, 199, 89, 0.4)',
       borderWidth: 1,

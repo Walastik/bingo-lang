@@ -4,7 +4,7 @@ import { ThemeColors } from '@/theme/colors';
 export function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     overlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: 'rgba(0,0,0,0.85)',
       zIndex: 100,
     },
