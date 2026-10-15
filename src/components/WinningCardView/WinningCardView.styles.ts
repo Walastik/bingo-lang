@@ -61,7 +61,7 @@ export function createStyles(colors: ThemeColors) {
       zIndex: 1,
     },
     winHighlight: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       borderRadius: 8,
       backgroundColor: 'rgba(255, 193, 7, 0.55)',
       borderWidth: 2,
