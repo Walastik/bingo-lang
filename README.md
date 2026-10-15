@@ -7,7 +7,8 @@ the board as a caller for a room of people playing on paper.
 
 ## Getting started
 
-Node 18 or newer, then:
+Node 24, pinned in `.tool-versions` (asdf picks it up; with another version manager, install
+the version listed there). Then:
 
 ```sh
 npm install
@@ -15,8 +16,10 @@ npm start
 ```
 
 Press `i` for the iOS simulator, `a` for an Android emulator, or scan the QR code with
-[Expo Go](https://expo.dev/go). `npm run ios` and `npm run android` build and run natively
-instead, which needs Xcode or Android Studio installed.
+[Expo Go](https://expo.dev/go). The project is on SDK 57, whose Expo Go is not in the app
+stores yet: simulators get it from the CLI, and an iPhone gets it with `eas go`.
+`npm run ios` and `npm run android` build and run natively instead, which needs Xcode or
+Android Studio installed.
 
 ## How the game works
 
